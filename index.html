@@ -104,6 +104,7 @@
         .logo-accent {
             background: linear-gradient(135deg, var(--color-accent), #0066ff);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -176,7 +177,8 @@
             border-radius: 50%;
             width: 28px;
             height: 28px;
-            display: none; /* Managed dynamically via JS */
+            display: none;
+            /* Managed dynamically via JS */
             align-items: center;
             justify-content: center;
             cursor: pointer;
@@ -198,11 +200,11 @@
             width: 14px;
             height: 14px;
         }
-        
+
         #btn-tabs-left {
             margin-right: 6px;
         }
-        
+
         #btn-tabs-right {
             margin-left: 6px;
         }
@@ -893,7 +895,7 @@
             align-items: center;
             gap: 4px;
             padding: 10px 8px;
-            background: rgba(255,255,255,0.03);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
             border-radius: 10px;
             color: var(--color-muted);
@@ -907,7 +909,7 @@
 
         .proxy-preset-btn:hover {
             border-color: var(--border-hover);
-            background: rgba(255,255,255,0.07);
+            background: rgba(255, 255, 255, 0.07);
             color: var(--color-text);
         }
 
@@ -926,7 +928,7 @@
             font-weight: 700;
             padding: 1px 5px;
             border-radius: 4px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.08);
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
@@ -1254,26 +1256,33 @@
 
                 <div class="setting-group">
                     <label for="setting-proxy-url" class="setting-label">Server Proxy CORS / Stream</label>
-                    <p class="setting-desc">Pilih server proxy yang digunakan untuk memuat stream. Gunakan <strong>Render</strong> untuk saluran Vision+ (TVRI, RCTI, dll). Gunakan <strong>Cloudflare</strong> untuk saluran lain yang lebih cepat.</p>
+                    <p class="setting-desc">Pilih server proxy yang digunakan untuk memuat stream. Gunakan
+                        <strong>Render</strong> untuk saluran Vision+ (TVRI, RCTI, dll). Gunakan
+                        <strong>Cloudflare</strong> untuk saluran lain yang lebih cepat.</p>
                     <div class="proxy-preset-row">
-                        <button class="proxy-preset-btn" id="btn-preset-cloudflare" onclick="setProxyPreset('cloudflare')" title="Cloudflare Workers — cepat, cocok untuk saluran internasional">
+                        <button class="proxy-preset-btn" id="btn-preset-cloudflare"
+                            onclick="setProxyPreset('cloudflare')"
+                            title="Cloudflare Workers — cepat, cocok untuk saluran internasional">
                             <span class="preset-icon">☁️</span>
                             <span>Cloudflare</span>
                             <span class="preset-badge">Workers</span>
                         </button>
-                        <button class="proxy-preset-btn" id="btn-preset-render" onclick="setProxyPreset('render')" title="Render.com — IP non-Cloudflare, cocok untuk Vision+ / saluran lokal">
+                        <button class="proxy-preset-btn" id="btn-preset-render" onclick="setProxyPreset('render')"
+                            title="Render.com — IP non-Cloudflare, cocok untuk Vision+ / saluran lokal">
                             <span class="preset-icon">🖥️</span>
                             <span>Render</span>
                             <span class="preset-badge">Non-CF</span>
                         </button>
-                        <button class="proxy-preset-btn" id="btn-preset-custom" onclick="setProxyPreset('custom')" title="URL proxy kustom Anda sendiri">
+                        <button class="proxy-preset-btn" id="btn-preset-custom" onclick="setProxyPreset('custom')"
+                            title="URL proxy kustom Anda sendiri">
                             <span class="preset-icon">✏️</span>
                             <span>Kustom</span>
                             <span class="preset-badge">Manual</span>
                         </button>
                     </div>
                     <input type="text" id="setting-proxy-url" value="https://watchit-cgzb.onrender.com" />
-                    <p class="setting-desc" style="margin-top:6px;">URL aktif: <code id="active-proxy-label">https://watchit-cgzb.onrender.com</code></p>
+                    <p class="setting-desc" style="margin-top:6px;">URL aktif: <code
+                            id="active-proxy-label">https://watchit-cgzb.onrender.com</code></p>
                 </div>
 
                 <div class="setting-group">
@@ -1290,7 +1299,8 @@
 
     <!-- Video.js and videojs-contrib-eme support -->
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels@4.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels@4.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.0/dist/videojs-contrib-eme.min.js"></script>
 
     <script>
@@ -1318,57 +1328,57 @@
             const boxSize = 36 + (16 * kidCount);
             const pssh = new Uint8Array(boxSize);
             let offset = 0;
-            
+
             // Box Size
             new DataView(pssh.buffer).setUint32(offset, boxSize);
             offset += 4;
-            
+
             // Box Type: 'pssh'
             pssh.set([112, 115, 115, 104], offset);
             offset += 4;
-            
+
             // Version (1) and Flags (0)
             new DataView(pssh.buffer).setUint32(offset, 0x01000000);
             offset += 4;
-            
+
             // System ID
             pssh.set(systemId, offset);
             offset += 16;
-            
+
             // KID Count
             new DataView(pssh.buffer).setUint32(offset, kidCount);
             offset += 4;
-            
+
             // KIDs
             for (const kid of kids) {
                 pssh.set(kid, offset);
                 offset += 16;
             }
-            
+
             // Data Size (0)
             new DataView(pssh.buffer).setUint32(offset, 0);
             offset += 4;
-            
+
             return pssh;
         }
 
         // Intercept MediaKeySession and track keySystem to ensure we only apply ClearKey PSSH fixes to ClearKey streams
-        (function() {
+        (function () {
             if (typeof navigator.requestMediaKeySystemAccess === 'undefined') {
                 return;
             }
             const originalRequestAccess = navigator.requestMediaKeySystemAccess;
-            navigator.requestMediaKeySystemAccess = function(keySystem, supportedConfigurations) {
+            navigator.requestMediaKeySystemAccess = function (keySystem, supportedConfigurations) {
                 return originalRequestAccess.call(this, keySystem, supportedConfigurations)
                     .then(access => {
                         const originalCreateMediaKeys = access.createMediaKeys;
-                        access.createMediaKeys = function() {
+                        access.createMediaKeys = function () {
                             return originalCreateMediaKeys.call(this)
                                 .then(mediaKeys => {
                                     mediaKeys._keySystem = keySystem;
-                                    
+
                                     const originalCreateSession = mediaKeys.createSession;
-                                    mediaKeys.createSession = function(sessionType) {
+                                    mediaKeys.createSession = function (sessionType) {
                                         const session = originalCreateSession.call(this, sessionType);
                                         session._keySystem = keySystem;
                                         return session;
@@ -1382,7 +1392,7 @@
 
             if (typeof window.MediaKeySession !== 'undefined' && window.MediaKeySession.prototype.generateRequest) {
                 const originalGenerateRequest = window.MediaKeySession.prototype.generateRequest;
-                window.MediaKeySession.prototype.generateRequest = function(initDataType, initData) {
+                window.MediaKeySession.prototype.generateRequest = function (initDataType, initData) {
                     try {
                         // Only modify initData if the key system is org.w3.clearkey
                         if (this._keySystem === 'org.w3.clearkey' && window.currentClearKeys && window.currentClearKeys.length > 0) {
@@ -1391,7 +1401,7 @@
                                 0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
                                 0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
                             ];
-                            
+
                             let hasClearKeyPssh = false;
                             for (let i = 0; i <= initDataBytes.length - 16; i++) {
                                 let match = true;
@@ -1406,7 +1416,7 @@
                                     break;
                                 }
                             }
-                            
+
                             if (!hasClearKeyPssh) {
                                 console.log('[WatchIt.maybe] ClearKey PSSH not found in initData. Generating and appending ClearKey PSSH...');
                                 const kidsBytes = window.currentClearKeys.map(k => {
@@ -1417,7 +1427,7 @@
                                         return null;
                                     }
                                 }).filter(Boolean);
-                                
+
                                 if (kidsBytes.length > 0) {
                                     const psshBox = createClearKeyPSSH(kidsBytes);
                                     const newInitData = new Uint8Array(initDataBytes.length + psshBox.length);
@@ -1460,7 +1470,7 @@
                     settings.playlistUrl = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
                 }
                 // Auto-migrate old proxy URLs to the new Render deployment
-                if (settings.proxyUrl === 'https://corsproxy.io/?url=' || 
+                if (settings.proxyUrl === 'https://corsproxy.io/?url=' ||
                     settings.proxyUrl === 'https://watchit.backupeka7.workers.dev' ||
                     !settings.proxyUrl) {
                     settings.proxyUrl = 'https://watchit-cgzb.onrender.com';
@@ -1477,11 +1487,11 @@
 
         // Quality levels listener for manual resolution selector below player
         const qualityLevels = player.qualityLevels();
-        
+
         qualityLevels.on('addqualitylevel', function () {
             updateQualityUI();
         });
-        
+
         qualityLevels.on('removequalitylevel', function () {
             updateQualityUI();
         });
@@ -1506,7 +1516,7 @@
             const autoBtn = document.createElement('button');
             autoBtn.className = 'quality-btn';
             autoBtn.innerText = 'Auto';
-            
+
             // Check if Auto is currently selected (meaning all levels are enabled)
             let isAuto = true;
             for (let i = 0; i < levels.length; i++) {
@@ -1532,7 +1542,7 @@
             // 2. Filter out duplicates and sort heights descending
             const uniqueHeights = [];
             const sortedLevels = [];
-            
+
             for (let i = 0; i < levels.length; i++) {
                 const lvl = levels[i];
                 if (lvl.height && !uniqueHeights.includes(lvl.height)) {
@@ -1583,7 +1593,7 @@
                 };
                 container.appendChild(btn);
             });
-            
+
             // Re-create icons in case any lucide icon is inside the wrapper
             lucide.createIcons();
         }
@@ -1599,19 +1609,19 @@
         function proxify(url, referrer, userAgent) {
             const baseInput = settings.proxyUrl.trim();
             if (!baseInput) return url;
-            
+
             let base = baseInput;
             if (base.includes('?url=')) {
                 base = base.split('?url=')[0];
             }
             base = base.replace(/\/+$/, '');
-            
+
             let q = `${base}/?url=${encodeURIComponent(url)}`;
-            
+
             const headers = {};
             if (referrer) headers['Referer'] = referrer;
             if (userAgent) headers['User-Agent'] = userAgent;
-            
+
             if (Object.keys(headers).length > 0) {
                 let enc;
                 try {
@@ -1636,7 +1646,7 @@
                             base = base.split('?url=')[0];
                         }
                         base = base.replace(/\/+$/, '');
-                        
+
                         // Rewrite segment/key requests to go through proxy if they aren't already
                         if (options.uri && !options.uri.startsWith(base) && !options.uri.startsWith('blob:')) {
                             options.uri = proxify(options.uri, originalSelectedChannel.referrer, originalSelectedChannel.userAgent);
@@ -2288,7 +2298,7 @@
         if (tabsContainer) {
             tabsContainer.addEventListener('scroll', updateTabScrollButtons);
             window.addEventListener('resize', updateTabScrollButtons);
-            
+
             // Mouse wheel scroll horizontal bypass
             tabsContainer.addEventListener('wheel', (e) => {
                 if (e.deltaY !== 0) {
@@ -2352,15 +2362,15 @@
         // Proxy Preset URLs
         const PROXY_PRESETS = {
             cloudflare: 'https://watchit.backupeka7.workers.dev',
-            render:     'https://watchit-cgzb.onrender.com'
+            render: 'https://watchit-cgzb.onrender.com'
         };
 
         // Update the active state of preset buttons based on current URL
         function updateProxyPresetUI(currentUrl) {
-            const cfBtn  = document.getElementById('btn-preset-cloudflare');
-            const rdBtn  = document.getElementById('btn-preset-render');
-            const cuBtn  = document.getElementById('btn-preset-custom');
-            const label  = document.getElementById('active-proxy-label');
+            const cfBtn = document.getElementById('btn-preset-cloudflare');
+            const rdBtn = document.getElementById('btn-preset-render');
+            const cuBtn = document.getElementById('btn-preset-custom');
+            const label = document.getElementById('active-proxy-label');
 
             cfBtn.classList.remove('active');
             rdBtn.classList.remove('active');
@@ -2378,7 +2388,7 @@
         }
 
         // Exposed globally so onclick="setProxyPreset(...)" in HTML works
-        window.setProxyPreset = function(preset) {
+        window.setProxyPreset = function (preset) {
             let url;
             if (preset === 'cloudflare') {
                 url = PROXY_PRESETS.cloudflare;
