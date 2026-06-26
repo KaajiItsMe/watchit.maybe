@@ -1838,6 +1838,44 @@
             settingsPanel.classList.remove('open');
         };
 
+        // Category Tabs Horizontal Scroll Controls
+        const tabsContainer = document.getElementById('category-tabs');
+        const btnTabsLeft = document.getElementById('btn-tabs-left');
+        const btnTabsRight = document.getElementById('btn-tabs-right');
+
+        function updateTabScrollButtons() {
+            if (!tabsContainer || !btnTabsLeft || !btnTabsRight) return;
+            const isScrollable = tabsContainer.scrollWidth > tabsContainer.clientWidth;
+            if (!isScrollable) {
+                btnTabsLeft.style.display = 'none';
+                btnTabsRight.style.display = 'none';
+                return;
+            }
+            btnTabsLeft.style.display = tabsContainer.scrollLeft > 5 ? 'flex' : 'none';
+            const reachedEnd = tabsContainer.scrollLeft + tabsContainer.clientWidth >= tabsContainer.scrollWidth - 5;
+            btnTabsRight.style.display = reachedEnd ? 'none' : 'flex';
+        }
+
+        if (tabsContainer) {
+            tabsContainer.addEventListener('scroll', updateTabScrollButtons);
+            window.addEventListener('resize', updateTabScrollButtons);
+            
+            // Mouse wheel scroll horizontal bypass
+            tabsContainer.addEventListener('wheel', (e) => {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    tabsContainer.scrollLeft += e.deltaY;
+                }
+            });
+        }
+
+        btnTabsLeft.onclick = () => {
+            tabsContainer.scrollBy({ left: -160, behavior: 'smooth' });
+        };
+        btnTabsRight.onclick = () => {
+            tabsContainer.scrollBy({ left: 160, behavior: 'smooth' });
+        };
+
         // Proxy Controls
         const toggleProxy = (enabled) => {
             settings.useProxy = enabled;
