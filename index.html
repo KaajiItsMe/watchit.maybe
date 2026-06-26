@@ -878,6 +878,63 @@
             border-color: var(--color-accent);
         }
 
+        /* Proxy Preset Buttons */
+        .proxy-preset-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .proxy-preset-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--color-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .proxy-preset-btn:hover {
+            border-color: var(--border-hover);
+            background: rgba(255,255,255,0.07);
+            color: var(--color-text);
+        }
+
+        .proxy-preset-btn.active {
+            border-color: var(--color-accent);
+            background: rgba(0, 209, 255, 0.08);
+            color: var(--color-accent);
+        }
+
+        .proxy-preset-btn .preset-icon {
+            font-size: 18px;
+        }
+
+        .proxy-preset-btn .preset-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.08);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .proxy-preset-btn.active .preset-badge {
+            background: rgba(0, 209, 255, 0.2);
+        }
+
         #setting-log-area {
             width: 100%;
             height: 180px;
@@ -1196,9 +1253,27 @@
                 </div>
 
                 <div class="setting-group">
-                    <label for="setting-proxy-url" class="setting-label">URL Proxy CORS / Stream Proxy</label>
-                    <input type="text" id="setting-proxy-url" value="https://watchit.backupeka7.workers.dev" />
-                    <p class="setting-desc">Endpoint proxy (default: <code>https://watchit.backupeka7.workers.dev</code>). Catatan: Cloudflare Worker ini mendukung penulisan ulang manifes HLS/DASH dan injeksi header Referer/User-Agent secara dinamis untuk memutar saluran premium.</p>
+                    <label for="setting-proxy-url" class="setting-label">Server Proxy CORS / Stream</label>
+                    <p class="setting-desc">Pilih server proxy yang digunakan untuk memuat stream. Gunakan <strong>Render</strong> untuk saluran Vision+ (TVRI, RCTI, dll). Gunakan <strong>Cloudflare</strong> untuk saluran lain yang lebih cepat.</p>
+                    <div class="proxy-preset-row">
+                        <button class="proxy-preset-btn" id="btn-preset-cloudflare" onclick="setProxyPreset('cloudflare')" title="Cloudflare Workers — cepat, cocok untuk saluran internasional">
+                            <span class="preset-icon">☁️</span>
+                            <span>Cloudflare</span>
+                            <span class="preset-badge">Workers</span>
+                        </button>
+                        <button class="proxy-preset-btn" id="btn-preset-render" onclick="setProxyPreset('render')" title="Render.com — IP non-Cloudflare, cocok untuk Vision+ / saluran lokal">
+                            <span class="preset-icon">🖥️</span>
+                            <span>Render</span>
+                            <span class="preset-badge">Non-CF</span>
+                        </button>
+                        <button class="proxy-preset-btn" id="btn-preset-custom" onclick="setProxyPreset('custom')" title="URL proxy kustom Anda sendiri">
+                            <span class="preset-icon">✏️</span>
+                            <span>Kustom</span>
+                            <span class="preset-badge">Manual</span>
+                        </button>
+                    </div>
+                    <input type="text" id="setting-proxy-url" value="https://watchit-cgzb.onrender.com" />
+                    <p class="setting-desc" style="margin-top:6px;">URL aktif: <code id="active-proxy-label">https://watchit-cgzb.onrender.com</code></p>
                 </div>
 
                 <div class="setting-group">
@@ -2268,6 +2343,61 @@
             settings.proxyUrl = e.target.value;
             localStorage.setItem('iptv_settings', JSON.stringify(settings));
             logDebug(`CORS Proxy URL changed to: ${settings.proxyUrl}`);
+            updateProxyPresetUI(settings.proxyUrl);
+            if (currentChannelIndex !== -1) {
+                selectChannel(currentChannelIndex);
+            }
+        };
+
+        // Proxy Preset URLs
+        const PROXY_PRESETS = {
+            cloudflare: 'https://watchit.backupeka7.workers.dev',
+            render:     'https://watchit-cgzb.onrender.com'
+        };
+
+        // Update the active state of preset buttons based on current URL
+        function updateProxyPresetUI(currentUrl) {
+            const cfBtn  = document.getElementById('btn-preset-cloudflare');
+            const rdBtn  = document.getElementById('btn-preset-render');
+            const cuBtn  = document.getElementById('btn-preset-custom');
+            const label  = document.getElementById('active-proxy-label');
+
+            cfBtn.classList.remove('active');
+            rdBtn.classList.remove('active');
+            cuBtn.classList.remove('active');
+
+            if (currentUrl === PROXY_PRESETS.cloudflare) {
+                cfBtn.classList.add('active');
+            } else if (currentUrl === PROXY_PRESETS.render) {
+                rdBtn.classList.add('active');
+            } else {
+                cuBtn.classList.add('active');
+            }
+
+            if (label) label.textContent = currentUrl || '-';
+        }
+
+        // Exposed globally so onclick="setProxyPreset(...)" in HTML works
+        window.setProxyPreset = function(preset) {
+            let url;
+            if (preset === 'cloudflare') {
+                url = PROXY_PRESETS.cloudflare;
+            } else if (preset === 'render') {
+                url = PROXY_PRESETS.render;
+            } else {
+                // Focus the input for manual editing
+                document.getElementById('setting-proxy-url').focus();
+                document.getElementById('btn-preset-custom').classList.add('active');
+                document.getElementById('btn-preset-cloudflare').classList.remove('active');
+                document.getElementById('btn-preset-render').classList.remove('active');
+                return;
+            }
+            settings.proxyUrl = url;
+            localStorage.setItem('iptv_settings', JSON.stringify(settings));
+            document.getElementById('setting-proxy-url').value = url;
+            updateProxyPresetUI(url);
+            logDebug(`Proxy preset changed to: ${preset} (${url})`);
+            showToast(`Proxy diubah ke ${preset === 'cloudflare' ? 'Cloudflare Workers' : 'Render'}`, 'success');
             if (currentChannelIndex !== -1) {
                 selectChannel(currentChannelIndex);
             }
@@ -2282,6 +2412,7 @@
             statusText.classList.add('active');
             document.getElementById('btn-toggle-proxy').classList.add('active');
         }
+        updateProxyPresetUI(settings.proxyUrl);
 
         // Initialize playlist URL input field
         document.getElementById('setting-playlist-url').value = settings.playlistUrl || 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
