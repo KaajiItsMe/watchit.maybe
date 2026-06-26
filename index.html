@@ -1155,7 +1155,19 @@
 
             /* Hamburger button — only visible on mobile */
             #btn-sidebar-toggle {
-                display: flex;
+                display: flex !important;
+            }
+
+            /* Close button for sidebar on mobile */
+            #btn-close-sidebar {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                font-size: 28px;
+                line-height: 1;
+                margin-left: auto;
             }
 
             /* Metadata panel: stack vertically and allow scroll */
@@ -1198,8 +1210,9 @@
             }
         }
 
-        /* Hide hamburger on desktop */
-        #btn-sidebar-toggle {
+        /* Hide hamburger and mobile close buttons on desktop */
+        #btn-sidebar-toggle,
+        #btn-close-sidebar {
             display: none;
         }
     </style>
@@ -1218,6 +1231,7 @@
                     <i data-lucide="tv"></i>
                     <span>WatchIt<span class="logo-accent">.maybe</span></span>
                 </div>
+                <button id="btn-close-sidebar" class="close-btn" title="Tutup Daftar">&times;</button>
             </div>
 
             <!-- Real-time Channel Filter/Search -->
@@ -2462,6 +2476,10 @@
         }
         if (sidebarBackdrop) {
             sidebarBackdrop.onclick = closeMobileSidebar;
+        }
+        const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+        if (btnCloseSidebar) {
+            btnCloseSidebar.onclick = closeMobileSidebar;
         }
 
         // Auto-close sidebar on mobile when a channel is selected
