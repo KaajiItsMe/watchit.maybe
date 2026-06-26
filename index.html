@@ -1142,15 +1142,30 @@
             }
 
             /* Hide text label in CORS Proxy button on mobile */
-            #btn-toggle-proxy span {
-                display: none;
+            #btn-toggle-proxy {
+                display: flex !important;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                padding: 4px 8px;
+                height: 38px;
+                font-size: 8px;
+                min-width: 65px;
+                border-radius: 6px;
             }
 
-            #btn-toggle-proxy {
-                width: 38px;
-                height: 38px;
-                padding: 0;
-                justify-content: center;
+            #btn-toggle-proxy i {
+                width: 14px;
+                height: 14px;
+            }
+
+            #btn-toggle-proxy span {
+                display: inline-block !important;
+                font-size: 8px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.2px;
             }
 
             /* Hamburger button — only visible on mobile */
@@ -1276,7 +1291,7 @@
                 <div class="nav-actions">
                     <button id="btn-toggle-proxy" class="nav-btn" title="Bypass CORS (Proxy)">
                         <i data-lucide="shield-alert"></i>
-                        <span>CORS Proxy</span>
+                        <span>CORS Mode</span>
                     </button>
                     <button id="btn-settings" class="icon-btn" title="Pengaturan">
                         <i data-lucide="settings"></i>
