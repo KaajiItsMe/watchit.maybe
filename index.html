@@ -1012,6 +1012,25 @@
             </div>
             <div class="settings-body">
                 <div class="setting-group">
+                    <label class="setting-label">Sumber Playlist M3U</label>
+                    <p class="setting-desc">Masukkan URL playlist M3U (misalnya link Github Raw) atau unggah file lokal.</p>
+                    
+                    <div class="url-input-group" style="margin-top: 5px;">
+                        <input type="text" id="setting-playlist-url" value="playlist.m3u" placeholder="https://url-playlist.m3u" style="flex: 1; padding: 8px 12px; background-color: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; color: var(--color-text); font-size: 13px;" />
+                        <button id="btn-load-playlist-url" class="icon-btn" title="Muat URL" style="width: 38px; height: 38px; flex-shrink: 0;">
+                            <i data-lucide="download"></i>
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                        <label for="btn-upload-playlist" class="btn btn-secondary" style="font-size: 12px; padding: 8px 12px; cursor: pointer; flex: 1; margin: 0;">
+                            <i data-lucide="file-up" style="width: 14px; height: 14px; margin-right: 4px;"></i> Unggah File M3U
+                        </label>
+                        <input type="file" id="btn-upload-playlist" accept=".m3u,.m3u8" style="display: none;" />
+                    </div>
+                </div>
+
+                <div class="setting-group">
                     <label class="setting-label">CORS Proxy Global</label>
                     <p class="setting-desc">Membantu memutar stream yang terhalang restriksi CORS atau Mixed Content.</p>
                     <div class="toggle-control">
@@ -1247,24 +1266,44 @@
             return null;
         }
 
-        // Fetch & Parse M3U playlist file
-        async function loadM3U() {
+        // Fetch & Parse M3U playlist file from a URL
+        async function loadM3U(url = 'playlist.m3u', useProxy = false) {
             try {
-                logDebug('Fetching playlist.m3u...');
-                const response = await fetch('playlist.m3u');
+                logDebug(`Fetching playlist from: ${url}...`);
+                let fetchUrl = url;
+                if (useProxy) {
+                    fetchUrl = settings.proxyUrl + encodeURIComponent(url);
+                    logDebug(`Using CORS Proxy to fetch playlist: ${settings.proxyUrl}`);
+                }
+                
+                const response = await fetch(fetchUrl);
                 if (!response.ok) throw new Error(`HTTP error ${response.status}`);
                 const text = await response.text();
-                logDebug('playlist.m3u loaded. Parsing contents...');
+                logDebug('Playlist loaded successfully. Parsing contents...');
+                
+                // Save current playlist url to settings
+                settings.playlistUrl = url;
+                localStorage.setItem('iptv_settings', JSON.stringify(settings));
+                document.getElementById('setting-playlist-url').value = url;
+
                 parseM3U(text);
+                showToast('Daftar saluran berhasil dimuat!', 'success');
             } catch (error) {
                 logDebug(`Failed to load playlist: ${error.message}`);
-                showToast('Gagal memuat file playlist.m3u', 'error');
-                document.getElementById('channel-list').innerHTML = `
-                    <li class="channel-item" style="justify-content: center; color: var(--color-danger); padding: 20px;">
-                        <i data-lucide="alert-octagon"></i>
-                        <span style="margin-left: 8px;">Gagal memuat file playlist.m3u</span>
-                    </li>`;
-                lucide.createIcons();
+                
+                // If it failed without proxy, and it is a remote HTTP/HTTPS link, auto retry with proxy
+                if (!useProxy && (url.startsWith('http://') || url.startsWith('https://'))) {
+                    logDebug('Retrying playlist fetch with CORS Proxy...');
+                    loadM3U(url, true);
+                } else {
+                    showToast('Gagal memuat playlist', 'error');
+                    document.getElementById('channel-list').innerHTML = `
+                        <li class="channel-item" style="justify-content: center; color: var(--color-danger); padding: 20px;">
+                            <i data-lucide="alert-octagon"></i>
+                            <span style="margin-left: 8px;">Gagal memuat playlist M3U</span>
+                        </li>`;
+                    lucide.createIcons();
+                }
             }
         }
 
@@ -1698,6 +1737,42 @@
             document.getElementById('btn-toggle-proxy').classList.add('active');
         }
 
+        // Initialize playlist URL input field
+        document.getElementById('setting-playlist-url').value = settings.playlistUrl || 'playlist.m3u';
+
+        // Load M3U from URL button click handler
+        document.getElementById('btn-load-playlist-url').onclick = () => {
+            const urlInput = document.getElementById('setting-playlist-url').value.trim();
+            if (urlInput && !urlInput.startsWith('Lokal:')) {
+                loadM3U(urlInput);
+            } else {
+                showToast('Masukkan URL playlist yang valid', 'error');
+            }
+        };
+
+        // Load M3U from Uploaded File
+        document.getElementById('btn-upload-playlist').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            logDebug(`Reading local file: ${file.name}...`);
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                logDebug('Local playlist file read successfully. Parsing...');
+                
+                document.getElementById('setting-playlist-url').value = `Lokal: ${file.name}`;
+                
+                parseM3U(text);
+                showToast('Daftar saluran lokal berhasil dimuat!', 'success');
+            };
+            reader.onerror = function() {
+                logDebug('Failed to read local file');
+                showToast('Gagal membaca file lokal', 'error');
+            };
+            reader.readAsText(file);
+        });
+
         // Copy URL button
         document.getElementById('btn-copy-url').onclick = () => {
             const urlInput = document.getElementById('meta-url');
@@ -1738,8 +1813,14 @@
             selectChannel(nextIndex);
         };
 
-        // Kick off M3U download and render list
-        loadM3U();
+        // Kick off M3U download and render list from settings or default
+        const initialPlaylist = settings.playlistUrl || 'playlist.m3u';
+        if (initialPlaylist.startsWith('Lokal:')) {
+            // Default to local server copy on reload for files loaded locally
+            loadM3U('playlist.m3u');
+        } else {
+            loadM3U(initialPlaylist);
+        }
     </script>
 </body>
 </html>
