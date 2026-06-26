@@ -1273,7 +1273,7 @@
         }
 
         // Fetch & Parse M3U playlist file from a URL
-        async function loadM3U(url = 'playlist.m3u', useProxy = false) {
+        async function loadM3U(url = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u', useProxy = false) {
             try {
                 logDebug(`Fetching playlist from: ${url}...`);
                 let fetchUrl = url;
@@ -1744,7 +1744,7 @@
         }
 
         // Initialize playlist URL input field
-        document.getElementById('setting-playlist-url').value = settings.playlistUrl || 'playlist.m3u';
+        document.getElementById('setting-playlist-url').value = settings.playlistUrl || 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
 
         // Load M3U from URL button click handler
         document.getElementById('btn-load-playlist-url').onclick = () => {
@@ -1822,8 +1822,8 @@
         // Kick off M3U download and render list from settings or default
         const initialPlaylist = settings.playlistUrl || 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
         if (initialPlaylist.startsWith('Lokal:')) {
-            // Default to local server copy on reload for files loaded locally
-            loadM3U('playlist.m3u');
+            // Default to remote copy on reload for files loaded locally
+            loadM3U('https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u');
         } else {
             loadM3U(initialPlaylist);
         }
