@@ -1133,8 +1133,8 @@
 
                 <div class="setting-group">
                     <label for="setting-proxy-url" class="setting-label">URL Proxy CORS / Stream Proxy</label>
-                    <input type="text" id="setting-proxy-url" value="https://corsproxy.io/?url=" />
-                    <p class="setting-desc">Endpoint proxy (default: <code>https://corsproxy.io/?url=</code>). Catatan: corsproxy.io hanya mendukung CORS biasa, TIDAK bisa menyuntikkan header Referer/User-Agent. Untuk saluran premium yang membutuhkan header khusus (seperti TransTV, Vision+), Anda wajib mendeploy Cloudflare Worker sendiri (script di <code>dhanytv/web/proxy/worker.js</code>) lalu tempel URL-nya di sini.</p>
+                    <input type="text" id="setting-proxy-url" value="https://watchit.backupeka7.workers.dev" />
+                    <p class="setting-desc">Endpoint proxy (default: <code>https://watchit.backupeka7.workers.dev</code>). Catatan: Cloudflare Worker ini mendukung penulisan ulang manifes HLS/DASH dan injeksi header Referer/User-Agent secara dinamis untuk memutar saluran premium.</p>
                 </div>
 
                 <div class="setting-group">
@@ -1163,7 +1163,7 @@
         // Proxy settings (saved in localStorage)
         let settings = {
             useProxy: false,
-            proxyUrl: 'https://corsproxy.io/?url=',
+            proxyUrl: 'https://watchit.backupeka7.workers.dev',
             playlistUrl: 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u'
         };
 
@@ -1174,8 +1174,12 @@
                 // Auto-migrate old local playlist configs to remote repository URL default
                 if (settings.playlistUrl === 'playlist.m3u' || settings.playlistUrl === 'dhanytv/dhanytv.m3u') {
                     settings.playlistUrl = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
-                    localStorage.setItem('iptv_settings', JSON.stringify(settings));
                 }
+                // Auto-migrate old proxy to the new custom deployed worker
+                if (settings.proxyUrl === 'https://corsproxy.io/?url=' || !settings.proxyUrl) {
+                    settings.proxyUrl = 'https://watchit.backupeka7.workers.dev';
+                }
+                localStorage.setItem('iptv_settings', JSON.stringify(settings));
             } catch (e) {
                 console.error('Failed to parse settings from localStorage', e);
             }
