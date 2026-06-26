@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web IPTV Player Mandiri</title>
+    <!-- Meload CSS Player Video Premium -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 300px;
+            background-color: #1e1e1e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+        #sidebar h2 {
+            padding: 15px;
+            margin: 0;
+            background-color: #252525;
+            font-size: 18px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        #channel-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .channel-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #2b2b2b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .channel-item:hover {
+            background-color: #2d2d2d;
+        }
+        .channel-item img {
+            width: 40px;
+            height: 25px;
+            object-fit: contain;
+            margin-right: 12px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        #player-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: #000000;
+            position: relative;
+        }
+        .video-js {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sisi Kiri: Daftar Saluran TV -->
+    <div id="sidebar">
+        <h2>📺 DAFTAR CHANNEL</h2>
+        <ul id="channel-list">
+            <li class="channel-item" style="justify-content: center; color: #888;">Memuat siaran...</li>
+        </ul>
+    </div>
+
+    <!-- Sisi Kanan: Layar Pemutar Video -->
+    <div id="player-container">
+        <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" poster="https://images.seeklogo.com/logo-png/62/1/2026-fifa-world-cup-logo-png_seeklogo-624583.png">
+            <p class="vjs-no-js">Browser tidak mendukung JavaScript.</p>
+        </video>
+    </div>
+
+    <!-- Meload JavaScript Pendukung Video Stream -->
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script>
+        const player = videojs('my-video');
+
+        // Fungsi membaca file playlist.m3u dari Notepad
+        async function loadM3U() {
+            try {
+                const response = await fetch('playlist.m3u');
+                const text = await response.text();
+                parseM3U(text);
+            } catch (error) {
+                console.error('Gagal memuat berkas playlist M3U:', error);
+                document.getElementById('channel-list').innerHTML = '<li class="channel-item" style="color:red;">Gagal memuat file playlist.m3u</li>';
+            }
+        }
+
+        // Fungsi memilah text M3U menjadi list channel
+        function parseM3U(data) {
+            const lines = data.split('\n');
+            const channelList = document.getElementById('channel-list');
+            channelList.innerHTML = ''; 
+
+            let currentName = '';
+            let currentLogo = '';
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    // Mencari nama channel
+                    const nameMatch = line.split(',')[1];
+                    currentName = nameMatch ? nameMatch.trim() : 'Unknown Channel';
+                    
+                    // Mencari logo tvg-logo
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    currentLogo = logoMatch ? logoMatch[1] : 'https://mimipipi22.github.io/logo/offline.m3u8';
+                } else if (line.startsWith('http')) {
+                    // Jika baris berisi URL streaming, buat elemen daftarnya
+                    const url = line;
+                    const li = document.createElement('li');
+                    li.className = 'channel-item';
+                    
+                    // Deteksi logo tiruan / fallback jika bermasalah
+                    const imgUrl = currentLogo.endsWith('.m3u8') ? 'https://cdn-icons-png.flaticon.com/128/9280/9280598.png' : currentLogo;
+                    
+                    li.innerHTML = `<img src="${imgUrl}" alt="logo"> <span>${currentName}</span>`;
+                    
+                    // Pasang fungsi klik untuk mengganti video di layar utama
+                    li.onclick = () => {
+                        let type = 'application/x-mpegURL'; // Standar HLS (.m3u8)
+                        if (url.includes('.mpd')) {
+                            type = 'application/dash+xml'; // Standar DASH (.mpd)
+                        }
+                        
+                        player.src({ src: url, type: type });
+                        player.play();
+                    };
+                    
+                    channelList.appendChild(li);
+                }
+            });
+        }
+
+        // Jalankan program pembaca saat web dibuka
+        loadM3U();
+    </script>
+</body>
+</html>
