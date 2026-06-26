@@ -1219,6 +1219,125 @@
     <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.0/dist/videojs-contrib-eme.min.js"></script>
 
     <script>
+        // Helper to convert base64url to Uint8Array bytes
+        function base64UrlToBytes(base64Url) {
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) {
+                base64 += '=';
+            }
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        // Helper to create a ClearKey PSSH box (Version 1) dynamically from Key IDs
+        function createClearKeyPSSH(kids) {
+            const systemId = new Uint8Array([
+                0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
+                0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
+            ]);
+            const kidCount = kids.length;
+            const boxSize = 36 + (16 * kidCount);
+            const pssh = new Uint8Array(boxSize);
+            let offset = 0;
+            
+            // Box Size
+            new DataView(pssh.buffer).setUint32(offset, boxSize);
+            offset += 4;
+            
+            // Box Type: 'pssh'
+            pssh.set([112, 115, 115, 104], offset);
+            offset += 4;
+            
+            // Version (1) and Flags (0)
+            new DataView(pssh.buffer).setUint32(offset, 0x01000000);
+            offset += 4;
+            
+            // System ID
+            pssh.set(systemId, offset);
+            offset += 16;
+            
+            // KID Count
+            new DataView(pssh.buffer).setUint32(offset, kidCount);
+            offset += 4;
+            
+            // KIDs
+            for (const kid of kids) {
+                pssh.set(kid, offset);
+                offset += 16;
+            }
+            
+            // Data Size (0)
+            new DataView(pssh.buffer).setUint32(offset, 0);
+            offset += 4;
+            
+            return pssh;
+        }
+
+        // Intercept MediaKeySession.prototype.generateRequest to inject a ClearKey PSSH box 
+        // if Chrome/Edge fails to find one for org.w3.clearkey decryptor
+        (function() {
+            if (typeof window.MediaKeySession === 'undefined' || !window.MediaKeySession.prototype.generateRequest) {
+                return;
+            }
+            const originalGenerateRequest = window.MediaKeySession.prototype.generateRequest;
+            window.MediaKeySession.prototype.generateRequest = function(initDataType, initData) {
+                try {
+                    if (window.currentClearKeys && window.currentClearKeys.length > 0) {
+                        const initDataBytes = new Uint8Array(initData);
+                        const clearkeySystemId = [
+                            0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
+                            0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
+                        ];
+                        
+                        let hasClearKeyPssh = false;
+                        for (let i = 0; i <= initDataBytes.length - 16; i++) {
+                            let match = true;
+                            for (let j = 0; j < 16; j++) {
+                                if (initDataBytes[i + j] !== clearkeySystemId[j]) {
+                                    match = false;
+                                    break;
+                                }
+                            }
+                            if (match) {
+                                hasClearKeyPssh = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasClearKeyPssh) {
+                            console.log('[WatchIt.maybe] ClearKey PSSH not found in initData. Generating and appending ClearKey PSSH...');
+                            const kidsBytes = window.currentClearKeys.map(k => {
+                                try {
+                                    return base64UrlToBytes(k.kid);
+                                } catch (e) {
+                                    console.error('[WatchIt.maybe] Failed to parse ClearKey KID', k.kid, e);
+                                    return null;
+                                }
+                            }).filter(Boolean);
+                            
+                            if (kidsBytes.length > 0) {
+                                const psshBox = createClearKeyPSSH(kidsBytes);
+                                const newInitData = new Uint8Array(initDataBytes.length + psshBox.length);
+                                newInitData.set(initDataBytes, 0);
+                                newInitData.set(psshBox, initDataBytes.length);
+                                initData = newInitData.buffer;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('[WatchIt.maybe] Error checking/modifying initData in generateRequest', e);
+                }
+                return originalGenerateRequest.call(this, initDataType, initData);
+            };
+        })();
+
+        // Global storage for the currently selected channel's clearkeys
+        window.currentClearKeys = null;
+
         // State variables
         let channels = [];
         let activeCategory = 'Semua';
@@ -1843,6 +1962,7 @@
 
         // Setup EME Options and load player source
         function selectChannel(index, forceProxy = null) {
+            window.currentClearKeys = null;
             if (index < 0 || index >= channels.length) return;
 
             // Clean up error state overlay
@@ -1921,6 +2041,7 @@
                 srcOptions.keySystems = {};
 
                 if (channel.drm.type === 'clearkey') {
+                    window.currentClearKeys = channel.drm.keys;
                     drmInfo = `ClearKey (${channel.drm.keys.length} keys)`;
                     srcOptions.keySystems['org.w3.clearkey'] = {
                         getLicense: function (emeOptions, keyMessage, callback) {
