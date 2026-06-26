@@ -1,11 +1,16 @@
 {
   "name": "watchit-proxy",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
-  "description": "Cloudflare Worker stream-proxy for WatchIt.maybe (inject headers + CORS + HLS/DASH manifest rewrite).",
+  "description": "WatchIt.maybe stream proxy — Node.js server (Render/Fly.io/Railway) & Cloudflare Worker.",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "deploy:cf": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "wrangler": "^3.78.0"
