@@ -972,6 +972,64 @@
                 display: none;
             }
         }
+
+        /* Resolution Selector Below Player */
+        .quality-selector-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .quality-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quality-label svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .quality-selector-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .quality-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--color-text);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .quality-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .quality-btn.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -1064,6 +1122,12 @@
                 </div>
             </div>
 
+            <!-- Quality Selector Panel -->
+            <div id="quality-selector-wrapper" class="quality-selector-wrapper hidden">
+                <span class="quality-label"><i data-lucide="sliders-horizontal"></i> Kualitas Video:</span>
+                <div id="quality-selector-container" class="quality-selector-container"></div>
+            </div>
+
             <!-- Footer Details & Metadata Panel -->
             <section class="metadata-panel">
                 <div class="meta-section">
@@ -1151,6 +1215,7 @@
 
     <!-- Video.js and videojs-contrib-eme support -->
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels@4.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.0/dist/videojs-contrib-eme.min.js"></script>
 
     <script>
@@ -1188,6 +1253,126 @@
         // Initialize Player with EME (DRM decryption support)
         const player = videojs('my-video');
         player.eme();
+
+        // Quality levels listener for manual resolution selector below player
+        const qualityLevels = player.qualityLevels();
+        
+        qualityLevels.on('addqualitylevel', function () {
+            updateQualityUI();
+        });
+        
+        qualityLevels.on('removequalitylevel', function () {
+            updateQualityUI();
+        });
+
+        // Update quality level selector UI below player
+        function updateQualityUI() {
+            const wrapper = document.getElementById('quality-selector-wrapper');
+            const container = document.getElementById('quality-selector-container');
+            const levels = player.qualityLevels();
+
+            // Only show resolution list if there are multiple options available
+            if (levels.length <= 1) {
+                wrapper.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            wrapper.classList.remove('hidden');
+            container.innerHTML = '';
+
+            // 1. Create "Auto" button
+            const autoBtn = document.createElement('button');
+            autoBtn.className = 'quality-btn';
+            autoBtn.innerText = 'Auto';
+            
+            // Check if Auto is currently selected (meaning all levels are enabled)
+            let isAuto = true;
+            for (let i = 0; i < levels.length; i++) {
+                if (!levels[i].enabled) {
+                    isAuto = false;
+                    break;
+                }
+            }
+            if (isAuto) {
+                autoBtn.classList.add('active');
+            }
+
+            autoBtn.onclick = () => {
+                // Enable all quality levels to let the player decide adaptively
+                for (let i = 0; i < levels.length; i++) {
+                    levels[i].enabled = true;
+                }
+                setActiveQualityButton(autoBtn);
+                showToast('Kualitas diatur ke Otomatis (Auto)', 'success');
+            };
+            container.appendChild(autoBtn);
+
+            // 2. Filter out duplicates and sort heights descending
+            const uniqueHeights = [];
+            const sortedLevels = [];
+            
+            for (let i = 0; i < levels.length; i++) {
+                const lvl = levels[i];
+                if (lvl.height && !uniqueHeights.includes(lvl.height)) {
+                    uniqueHeights.push(lvl.height);
+                    sortedLevels.push({
+                        height: lvl.height,
+                        id: lvl.id
+                    });
+                }
+            }
+
+            sortedLevels.sort((a, b) => b.height - a.height);
+
+            // 3. Create a button for each unique resolution level
+            sortedLevels.forEach(lvl => {
+                const btn = document.createElement('button');
+                btn.className = 'quality-btn';
+                btn.innerText = lvl.height + 'p';
+
+                // Check if this resolution is currently the only enabled one
+                let isThisSelected = false;
+                // Count enabled levels
+                let enabledCount = 0;
+                let isEnabled = false;
+                for (let i = 0; i < levels.length; i++) {
+                    if (levels[i].enabled) {
+                        enabledCount++;
+                        if (levels[i].height === lvl.height) {
+                            isEnabled = true;
+                        }
+                    }
+                }
+                if (enabledCount === 1 && isEnabled) {
+                    btn.classList.add('active');
+                }
+
+                btn.onclick = () => {
+                    // Disable all levels except the chosen height
+                    for (let i = 0; i < levels.length; i++) {
+                        if (levels[i].height === lvl.height) {
+                            levels[i].enabled = true;
+                        } else {
+                            levels[i].enabled = false;
+                        }
+                    }
+                    setActiveQualityButton(btn);
+                    showToast(`Kualitas diatur ke ${lvl.height}p`, 'success');
+                };
+                container.appendChild(btn);
+            });
+            
+            // Re-create icons in case any lucide icon is inside the wrapper
+            lucide.createIcons();
+        }
+
+        function setActiveQualityButton(activeBtn) {
+            document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            activeBtn.classList.add('active');
+        }
 
         // Helper to format url through CORS/stream proxy and add encoded headers (dhanytv reference)
         function proxify(url, referrer, userAgent) {
@@ -1662,6 +1847,14 @@
 
             // Clean up error state overlay
             document.getElementById('player-error-overlay').classList.add('hidden');
+
+            // Reset quality selector UI
+            const qualityWrapper = document.getElementById('quality-selector-wrapper');
+            const qualityContainer = document.getElementById('quality-selector-container');
+            if (qualityWrapper && qualityContainer) {
+                qualityWrapper.classList.add('hidden');
+                qualityContainer.innerHTML = '';
+            }
 
             currentChannelIndex = index;
             const channel = channels[index];
