@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WatchIt.maybe - Premium Web IPTV Player</title>
-    
+
     <!-- Meta tags for basic SEO -->
-    <meta name="description" content="WatchIt.maybe is a premium, self-hosted web-based IPTV player featuring multi-category selection, automatic CORS bypass, and DRM decryption capabilities.">
+    <meta name="description"
+        content="WatchIt.maybe is a premium, self-hosted web-based IPTV player featuring multi-category selection, automatic CORS bypass, and DRM decryption capabilities.">
     <meta name="theme-color" content="#0a0a0c">
 
     <!-- Fonts & Icons -->
@@ -26,7 +28,7 @@
             --bg-glass-active: rgba(25, 25, 35, 0.85);
             --border-color: #22222c;
             --border-hover: #333344;
-            
+
             --color-text: #f0f0f5;
             --color-muted: #8c8c9e;
             --color-accent: #00d2ff;
@@ -34,10 +36,10 @@
             --color-primary: #0055ff;
             --color-danger: #ff3b30;
             --color-success: #34c759;
-            
+
             --sidebar-width: 320px;
             --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            
+
             --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -146,11 +148,13 @@
             display: flex;
             gap: 8px;
             overflow-x: auto;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
+            /* Firefox */
         }
 
         .category-tabs::-webkit-scrollbar {
-            display: none; /* Safari & Chrome */
+            display: none;
+            /* Safari & Chrome */
         }
 
         .category-pill {
@@ -475,8 +479,15 @@
         }
 
         @keyframes scaleIn {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .error-icon {
@@ -791,11 +802,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: var(--color-accent);
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(20px);
         }
 
@@ -861,8 +872,15 @@
         }
 
         @keyframes slideIn {
-            0% { transform: translateY(20px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .toast i {
@@ -870,30 +888,42 @@
             height: 16px;
         }
 
-        .toast-info i { color: var(--color-accent); }
-        .toast-success i { color: var(--color-success); }
-        .toast-error i { color: var(--color-danger); }
+        .toast-info i {
+            color: var(--color-accent);
+        }
+
+        .toast-success i {
+            color: var(--color-success);
+        }
+
+        .toast-error i {
+            color: var(--color-danger);
+        }
 
         /* Responsive Design */
         @media (max-width: 900px) {
             #app-container {
                 flex-direction: column-reverse;
             }
+
             #sidebar {
                 width: 100vw;
                 height: 40vh;
                 border-right: none;
                 border-top: 1px solid var(--border-color);
             }
+
             #main-content {
                 height: 60vh;
             }
+
             .metadata-panel {
                 display: none;
             }
         }
     </style>
 </head>
+
 <body>
 
     <div id="app-container">
@@ -905,7 +935,7 @@
                     <span>WatchIt<span class="logo-accent">.maybe</span></span>
                 </div>
             </div>
-            
+
             <!-- Real-time Channel Filter/Search -->
             <div class="search-container">
                 <i data-lucide="search" class="search-icon"></i>
@@ -947,10 +977,12 @@
             <!-- Video Player Window -->
             <div class="player-wrapper">
                 <div id="player-container">
-                    <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered vjs-theme-city" controls preload="auto" poster="https://images.seeklogo.com/logo-png/62/1/2026-fifa-world-cup-logo-png_seeklogo-624583.png">
+                    <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered vjs-theme-city" controls
+                        preload="auto"
+                        poster="https://images.seeklogo.com/logo-png/62/1/2026-fifa-world-cup-logo-png_seeklogo-624583.png">
                         <p class="vjs-no-js">Browser tidak mendukung JavaScript.</p>
                     </video>
-                    
+
                     <!-- Glassmorphic Error recovery screen overlay -->
                     <div id="player-error-overlay" class="player-overlay hidden">
                         <div class="error-card">
@@ -1013,18 +1045,25 @@
             <div class="settings-body">
                 <div class="setting-group">
                     <label class="setting-label">Sumber Playlist M3U</label>
-                    <p class="setting-desc">Masukkan URL playlist M3U (misalnya link Github Raw) atau unggah file lokal.</p>
-                    
+                    <p class="setting-desc">Masukkan URL playlist M3U (misalnya link Github Raw) atau unggah file lokal.
+                    </p>
+
                     <div class="url-input-group" style="margin-top: 5px;">
-                        <input type="text" id="setting-playlist-url" value="https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u" placeholder="https://url-playlist.m3u" style="flex: 1; padding: 8px 12px; background-color: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; color: var(--color-text); font-size: 13px;" />
-                        <button id="btn-load-playlist-url" class="icon-btn" title="Muat URL" style="width: 38px; height: 38px; flex-shrink: 0;">
+                        <input type="text" id="setting-playlist-url"
+                            value="https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u"
+                            placeholder="https://url-playlist.m3u"
+                            style="flex: 1; padding: 8px 12px; background-color: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; color: var(--color-text); font-size: 13px;" />
+                        <button id="btn-load-playlist-url" class="icon-btn" title="Muat URL"
+                            style="width: 38px; height: 38px; flex-shrink: 0;">
                             <i data-lucide="download"></i>
                         </button>
                     </div>
 
                     <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-                        <label for="btn-upload-playlist" class="btn btn-secondary" style="font-size: 12px; padding: 8px 12px; cursor: pointer; flex: 1; margin: 0;">
-                            <i data-lucide="file-up" style="width: 14px; height: 14px; margin-right: 4px;"></i> Unggah File M3U
+                        <label for="btn-upload-playlist" class="btn btn-secondary"
+                            style="font-size: 12px; padding: 8px 12px; cursor: pointer; flex: 1; margin: 0;">
+                            <i data-lucide="file-up" style="width: 14px; height: 14px; margin-right: 4px;"></i> Unggah
+                            File M3U
                         </label>
                         <input type="file" id="btn-upload-playlist" accept=".m3u,.m3u8" style="display: none;" />
                     </div>
@@ -1032,7 +1071,8 @@
 
                 <div class="setting-group">
                     <label class="setting-label">CORS Proxy Global</label>
-                    <p class="setting-desc">Membantu memutar stream yang terhalang restriksi CORS atau Mixed Content.</p>
+                    <p class="setting-desc">Membantu memutar stream yang terhalang restriksi CORS atau Mixed Content.
+                    </p>
                     <div class="toggle-control">
                         <span class="toggle-status" id="proxy-status-text">Mati</span>
                         <label class="switch">
@@ -1050,7 +1090,8 @@
 
                 <div class="setting-group">
                     <label class="setting-label">Log Aktivitas Pemutar</label>
-                    <textarea id="setting-log-area" readonly placeholder="Aktivitas streaming akan tercatat di sini..."></textarea>
+                    <textarea id="setting-log-area" readonly
+                        placeholder="Aktivitas streaming akan tercatat di sini..."></textarea>
                 </div>
             </div>
         </div>
@@ -1062,14 +1103,14 @@
     <!-- Video.js and videojs-contrib-eme support -->
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5.4.0/dist/videojs-contrib-eme.min.js"></script>
-    
+
     <script>
         // State variables
         let channels = [];
         let activeCategory = 'Semua';
         let currentChannelIndex = -1;
         let originalSelectedChannel = null; // Store channel reference before proxy edits
-        
+
         // Proxy settings (saved in localStorage)
         let settings = {
             useProxy: false,
@@ -1081,8 +1122,8 @@
         if (localStorage.getItem('iptv_settings')) {
             try {
                 settings = { ...settings, ...JSON.parse(localStorage.getItem('iptv_settings')) };
-                // Auto-migrate old playlist.m3u config to new remote default
-                if (settings.playlistUrl === 'playlist.m3u') {
+                // Auto-migrate old local playlist configs to remote repository URL default
+                if (settings.playlistUrl === 'playlist.m3u' || settings.playlistUrl === 'dhanytv/dhanytv.m3u') {
                     settings.playlistUrl = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
                     localStorage.setItem('iptv_settings', JSON.stringify(settings));
                 }
@@ -1113,15 +1154,15 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            
+
             let icon = 'info';
             if (type === 'success') icon = 'check-circle';
             if (type === 'error') icon = 'alert-circle';
-            
+
             toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
             container.appendChild(toast);
             lucide.createIcons();
-            
+
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px)';
@@ -1158,7 +1199,7 @@
 
             const fallback = document.createElement('div');
             fallback.className = 'logo-fallback';
-            
+
             // Clean up the name for initials (2 letters)
             const cleanName = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
             const words = cleanName.split(' ').filter(w => w.length > 0);
@@ -1172,7 +1213,7 @@
             }
 
             fallback.innerText = initials;
-            
+
             // Set dynamic gradient color depending on name hash code
             let hash = 0;
             for (let i = 0; i < name.length; i++) {
@@ -1180,7 +1221,7 @@
             }
             const hue = Math.abs(hash) % 360;
             fallback.style.background = `linear-gradient(135deg, hsl(${hue}, 70%, 40%), hsl(${(hue + 60) % 360}, 75%, 28%))`;
-            
+
             parent.appendChild(fallback);
         }
 
@@ -1201,7 +1242,7 @@
             if (licenseKey.startsWith('{')) {
                 try {
                     const parsed = JSON.parse(licenseKey);
-                    
+
                     // Case 1: Standard JWK Set format {"keys": [{"k": "...", "kid": "..."}]}
                     if (parsed.keys && Array.isArray(parsed.keys)) {
                         return {
@@ -1213,7 +1254,7 @@
                             }))
                         };
                     }
-                    
+
                     // Case 2: Simple hex dictionary format {"kid_hex": "key_hex"}
                     if (typeof parsed === 'object') {
                         const keys = [];
@@ -1281,12 +1322,12 @@
                     fetchUrl = settings.proxyUrl + encodeURIComponent(url);
                     logDebug(`Using CORS Proxy to fetch playlist: ${settings.proxyUrl}`);
                 }
-                
+
                 const response = await fetch(fetchUrl);
                 if (!response.ok) throw new Error(`HTTP error ${response.status}`);
                 const text = await response.text();
                 logDebug('Playlist loaded successfully. Parsing contents...');
-                
+
                 // Save current playlist url to settings
                 settings.playlistUrl = url;
                 localStorage.setItem('iptv_settings', JSON.stringify(settings));
@@ -1296,7 +1337,7 @@
                 showToast('Daftar saluran berhasil dimuat!', 'success');
             } catch (error) {
                 logDebug(`Failed to load playlist: ${error.message}`);
-                
+
                 // If it failed without proxy, and it is a remote HTTP/HTTPS link, auto retry with proxy
                 if (!useProxy && (url.startsWith('http://') || url.startsWith('https://'))) {
                     logDebug('Retrying playlist fetch with CORS Proxy...');
@@ -1316,7 +1357,7 @@
         function parseM3U(data) {
             const lines = data.split('\n');
             channels = [];
-            
+
             let tempKodiProps = {};
             let tempExtVlcOpts = {};
             let tempExtInf = null;
@@ -1355,7 +1396,7 @@
                 } else if (line.includes('#EXTINF:')) {
                     const extInfIndex = line.indexOf('#EXTINF:');
                     const extInfPart = line.substring(extInfIndex);
-                    
+
                     const commaIndex = extInfPart.lastIndexOf(',');
                     let name = 'Unknown Channel';
                     if (commaIndex !== -1) {
@@ -1432,7 +1473,7 @@
             listContainer.innerHTML = '';
 
             const searchLower = search.toLowerCase();
-            
+
             // Filter channels matching parameters
             const filtered = channels.filter(ch => {
                 const matchesCategory = (category === 'Semua' || ch.group === category);
@@ -1451,13 +1492,13 @@
             filtered.forEach(ch => {
                 // Find global index of this channel
                 const index = channels.indexOf(ch);
-                
+
                 const li = document.createElement('li');
                 li.className = `channel-item ${index === currentChannelIndex ? 'active' : ''}`;
-                
+
                 // Fallback offline image detection
                 const imgUrl = (ch.logo.endsWith('.m3u8') || !ch.logo) ? '' : ch.logo;
-                
+
                 // Setup DRM badge
                 let drmBadge = '';
                 if (ch.drm) {
@@ -1484,11 +1525,11 @@
                         if (imgPlaceholder) {
                             const fallback = document.createElement('div');
                             fallback.className = 'logo-fallback';
-                            
+
                             const cleanName = ch.name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
                             const words = cleanName.split(' ').filter(w => w.length > 0);
                             let initials = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0] ? words[0].substring(0, 2).toUpperCase() : '📺');
-                            
+
                             fallback.innerText = initials;
                             let hash = 0;
                             for (let i = 0; i < ch.name.length; i++) hash = ch.name.charCodeAt(i) + ((hash << 5) - hash);
@@ -1507,16 +1548,16 @@
         // Setup EME Options and load player source
         function selectChannel(index, forceProxy = null) {
             if (index < 0 || index >= channels.length) return;
-            
+
             // Clean up error state overlay
             document.getElementById('player-error-overlay').classList.add('hidden');
-            
+
             currentChannelIndex = index;
             const channel = channels[index];
             originalSelectedChannel = channel;
-            
+
             logDebug(`Selecting channel: ${channel.name}`);
-            
+
             // Active sidebar selection styling
             document.querySelectorAll('.channel-item').forEach((item, idx) => {
                 item.classList.remove('active');
@@ -1530,7 +1571,7 @@
 
             // Decide whether to apply CORS proxy
             const useProxy = (forceProxy !== null) ? forceProxy : settings.useProxy;
-            
+
             // Check if HTTP to HTTPS upgrade is necessary to prevent Mixed Content
             let streamUrl = channel.url;
             const isPageHttps = window.location.protocol === 'https:';
@@ -1573,11 +1614,11 @@
             let drmInfo = 'None';
             if (channel.drm) {
                 srcOptions.keySystems = {};
-                
+
                 if (channel.drm.type === 'clearkey') {
                     drmInfo = `ClearKey (${channel.drm.keys.length} keys)`;
                     srcOptions.keySystems['org.w3.clearkey'] = {
-                        getLicense: function(emeOptions, keyMessage, callback) {
+                        getLicense: function (emeOptions, keyMessage, callback) {
                             const response = JSON.stringify({
                                 keys: channel.drm.keys,
                                 type: 'temporary'
@@ -1636,15 +1677,15 @@
             const msgEl = document.getElementById('error-message');
             const retryProxyBtn = document.getElementById('btn-retry-proxy');
             const nextSourceBtn = document.getElementById('btn-next-source');
-            
+
             let message = error ? error.message : 'Koneksi jaringan terputus atau format media tidak didukung.';
-            
+
             if (error && error.code === 4) {
                 message = 'Gagal memuat video. Ini mungkin karena restriksi CORS, halaman diblokir Mixed Content (HTTP di situs HTTPS), atau enkripsi DRM tidak terdekripsi.';
             }
 
             msgEl.innerText = message;
-            
+
             // Check if current channel has alternative sources we can switch to
             if (originalSelectedChannel) {
                 const baseName = originalSelectedChannel.originalName;
@@ -1668,14 +1709,14 @@
         }
 
         // Player error listener
-        player.on('error', function() {
+        player.on('error', function () {
             const error = player.error();
             logDebug(`Player Error: Code ${error.code} - ${error.message}`);
             showPlayerError(error);
         });
 
         // Setup Interactive Actions & Event Listeners
-        
+
         // Search Input filter
         document.getElementById('search-input').addEventListener('input', (e) => {
             renderChannels(activeCategory, e.target.value);
@@ -1694,7 +1735,7 @@
         const toggleProxy = (enabled) => {
             settings.useProxy = enabled;
             localStorage.setItem('iptv_settings', JSON.stringify(settings));
-            
+
             // Update UI elements
             document.getElementById('setting-proxy-toggle').checked = enabled;
             const statusText = document.getElementById('proxy-status-text');
@@ -1757,22 +1798,22 @@
         };
 
         // Load M3U from Uploaded File
-        document.getElementById('btn-upload-playlist').addEventListener('change', function(e) {
+        document.getElementById('btn-upload-playlist').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
             logDebug(`Reading local file: ${file.name}...`);
             const reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = function (event) {
                 const text = event.target.result;
                 logDebug('Local playlist file read successfully. Parsing...');
-                
+
                 document.getElementById('setting-playlist-url').value = `Lokal: ${file.name}`;
-                
+
                 parseM3U(text);
                 showToast('Daftar saluran lokal berhasil dimuat!', 'success');
             };
-            reader.onerror = function() {
+            reader.onerror = function () {
                 logDebug('Failed to read local file');
                 showToast('Gagal membaca file lokal', 'error');
             };
@@ -1829,4 +1870,5 @@
         }
     </script>
 </body>
+
 </html>
