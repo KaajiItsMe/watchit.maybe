@@ -1372,7 +1372,7 @@
         // Proxy settings (saved in localStorage)
         let settings = {
             useProxy: false,
-            proxyUrl: 'https://watchit.backupeka7.workers.dev',
+            proxyUrl: 'https://watchit-cgzb.onrender.com',
             playlistUrl: 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u'
         };
 
@@ -1384,9 +1384,11 @@
                 if (settings.playlistUrl === 'playlist.m3u' || settings.playlistUrl === 'dhanytv/dhanytv.m3u') {
                     settings.playlistUrl = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
                 }
-                // Auto-migrate old proxy to the new custom deployed worker
-                if (settings.proxyUrl === 'https://corsproxy.io/?url=' || !settings.proxyUrl) {
-                    settings.proxyUrl = 'https://watchit.backupeka7.workers.dev';
+                // Auto-migrate old proxy URLs to the new Render deployment
+                if (settings.proxyUrl === 'https://corsproxy.io/?url=' || 
+                    settings.proxyUrl === 'https://watchit.backupeka7.workers.dev' ||
+                    !settings.proxyUrl) {
+                    settings.proxyUrl = 'https://watchit-cgzb.onrender.com';
                 }
                 localStorage.setItem('iptv_settings', JSON.stringify(settings));
             } catch (e) {
