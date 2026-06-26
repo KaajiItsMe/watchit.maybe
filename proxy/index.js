@@ -37,11 +37,35 @@ export default {
       }
     }
 
-    // Ambil parameter query 'url'
+    // Parse target URL and custom headers (supports query params and path-based routing)
+    let targetUrlString = '';
+    let headersParam = '';
+
     const requestUrl = new URL(request.url);
-    const targetUrlString = requestUrl.searchParams.get('url');
+    const queryTarget = requestUrl.searchParams.get('url');
+
+    if (queryTarget) {
+      targetUrlString = queryTarget;
+      headersParam = requestUrl.searchParams.get('h') || '';
+    } else {
+      // Path-based parsing
+      // Pattern 1: /h_[base64-headers]/https://target-url.com/...
+      // Pattern 2: /https://target-url.com/...
+      const requestUrlString = request.url;
+      const pathMatch = requestUrlString.match(/\/h_([^/]+)\/(https?:\/\/.+)$/);
+      if (pathMatch) {
+        headersParam = pathMatch[1];
+        targetUrlString = pathMatch[2];
+      } else {
+        const noHeadersMatch = requestUrlString.match(/\/https?:\/\/.+$/);
+        if (noHeadersMatch) {
+          targetUrlString = noHeadersMatch[0].substring(1); // remove leading slash
+        }
+      }
+    }
+
     if (!targetUrlString) {
-      return denyResponse(400, 'Missing ?url parameter', corsHeaders);
+      return denyResponse(400, 'Missing target URL parameter in query or path', corsHeaders);
     }
 
     if (targetUrlString.length > MAX_URL_LENGTH) {
@@ -70,7 +94,6 @@ export default {
 
     // Dekode header kustom dari parameter 'h' (Base64 JSON)
     let customHeaders = {};
-    const headersParam = requestUrl.searchParams.get('h');
     if (headersParam) {
       try {
         customHeaders = JSON.parse(atob(decodeURIComponent(headersParam)));
@@ -130,7 +153,7 @@ export default {
     // Jika manifest HLS atau DASH, kita harus membaca ulang isinya untuk merutekan link di dalamnya lewat proxy ini
     if (isHls || isDash) {
       const manifestText = await response.text();
-      const selfProxyBase = `${requestUrl.origin}${requestUrl.pathname}`;
+      const selfProxyBase = requestUrl.origin;
       
       const rewrittenBody = isHls 
         ? rewriteHlsManifest(manifestText, targetUrlString, selfProxyBase, headersParam)
@@ -226,11 +249,10 @@ function absolutizeUrl(relativeUrl, baseUrl) {
 }
 
 function wrapUrlInProxy(absoluteUrl, selfProxyBase, headersParam) {
-  let proxyUrl = `${selfProxyBase}?url=${encodeURIComponent(absoluteUrl)}`;
   if (headersParam) {
-    proxyUrl += `&h=${headersParam}`;
+    return `${selfProxyBase}/h_${headersParam}/${absoluteUrl}`;
   }
-  return proxyUrl;
+  return `${selfProxyBase}/${absoluteUrl}`;
 }
 
 function rewriteHlsManifest(text, manifestUrl, selfProxyBase, headersParam) {
@@ -263,8 +285,8 @@ function rewriteDashManifest(text, manifestUrl, selfProxyBase, headersParam) {
     return `<BaseURL>${wrapped}</BaseURL>`;
   });
 
-  // Ganti atribut media, initialization, dan sourceURL
-  text = text.replace(/(media|initialization|sourceURL)="((?:https?:)?\/\/[^"]+)"/g, (_, attribute, url) => {
+  // Ganti atribut media, initialization, dan sourceURL (mendukung relative & absolute)
+  text = text.replace(/(media|initialization|sourceURL)="([^"]+)"/g, (_, attribute, url) => {
     const abs = absolutizeUrl(url, manifestUrl);
     const wrapped = wrapUrlInProxy(abs, selfProxyBase, headersParam);
     return `${attribute}="${wrapped}"`;
