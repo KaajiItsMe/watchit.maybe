@@ -1159,6 +1159,12 @@
             parent.appendChild(fallback);
         }
 
+        // Helper to sanitize standard base64 to base64url
+        function sanitizeBase64Url(base64) {
+            if (typeof base64 !== 'string') return '';
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
         // Parse Kodi Properties DRM settings
         function parseDrmProperties(props) {
             const licenseType = props['inputstream.adaptive.license_type'] || '';
@@ -1170,15 +1176,39 @@
             if (licenseKey.startsWith('{')) {
                 try {
                     const parsed = JSON.parse(licenseKey);
-                    if (parsed.keys) {
+                    
+                    // Case 1: Standard JWK Set format {"keys": [{"k": "...", "kid": "..."}]}
+                    if (parsed.keys && Array.isArray(parsed.keys)) {
                         return {
                             type: 'clearkey',
                             keys: parsed.keys.map(k => ({
                                 kty: 'oct',
-                                kid: k.kid,
-                                k: k.k
+                                kid: sanitizeBase64Url(k.kid),
+                                k: sanitizeBase64Url(k.k)
                             }))
                         };
+                    }
+                    
+                    // Case 2: Simple hex dictionary format {"kid_hex": "key_hex"}
+                    if (typeof parsed === 'object') {
+                        const keys = [];
+                        for (const [kidHex, keyHex] of Object.entries(parsed)) {
+                            const cleanKid = kidHex.replace(/[^0-9a-fA-F]/g, '');
+                            const cleanKey = keyHex.replace(/[^0-9a-fA-F]/g, '');
+                            if (cleanKid.length >= 16 && cleanKey.length >= 16) {
+                                keys.push({
+                                    kty: 'oct',
+                                    kid: hexToBase64Url(cleanKid),
+                                    k: hexToBase64Url(cleanKey)
+                                });
+                            }
+                        }
+                        if (keys.length > 0) {
+                            return {
+                                type: 'clearkey',
+                                keys: keys
+                            };
+                        }
                     }
                 } catch (e) {
                     console.error('Failed to parse JSON ClearKey', e);
@@ -1295,7 +1325,7 @@
 
                     tempExtInf = { name, logo, group };
                     lastLineWasUrl = false;
-                } else if (line.startsWith('http') || line.includes('://')) {
+                } else if ((line.startsWith('http') || line.includes('://')) && !line.startsWith('#')) {
                     // Remove trailing asterisk placeholders sometimes added in worker links
                     let url = line.replace(/\*+$/, '');
 
