@@ -21,8 +21,8 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // Hanya izinkan method GET dan HEAD
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+    // Hanya izinkan method GET, HEAD, dan POST
+    if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'POST') {
       return denyResponse(405, 'Method Not Allowed', corsHeaders);
     }
 
@@ -113,6 +113,12 @@ export default {
       }
     }
 
+    // Meneruskan header penting dari request client asli (seperti Content-Type untuk POST)
+    const incomingContentType = request.headers.get('Content-Type');
+    if (incomingContentType) {
+      forwardHeaders.set('Content-Type', incomingContentType);
+    }
+
     // Teruskan header Range jika ada (sangat penting untuk seeking video)
     const rangeHeader = request.headers.get('Range');
     if (rangeHeader) {
@@ -127,11 +133,18 @@ export default {
     // Lakukan fetch ke CDN target
     let response;
     try {
-      response = await fetch(targetUrl.toString(), {
-        method: 'GET',
+      const fetchOptions = {
+        method: request.method,
         headers: forwardHeaders,
         redirect: 'follow'
-      });
+      };
+      
+      // Meneruskan body untuk request POST/PUT
+      if (request.method !== 'GET' && request.method !== 'HEAD' && request.body) {
+        fetchOptions.body = request.body;
+      }
+
+      response = await fetch(targetUrl.toString(), fetchOptions);
     } catch (err) {
       return denyResponse(502, 'Upstream fetch failed: ' + err.message, corsHeaders);
     }
@@ -186,7 +199,7 @@ function getCorsHeaders(origin, allowedOrigins) {
 
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Range, Content-Type',
     'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
     'Vary': 'Origin'

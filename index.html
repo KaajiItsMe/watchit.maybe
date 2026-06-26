@@ -1277,62 +1277,87 @@
             return pssh;
         }
 
-        // Intercept MediaKeySession.prototype.generateRequest to inject a ClearKey PSSH box 
-        // if Chrome/Edge fails to find one for org.w3.clearkey decryptor
+        // Intercept MediaKeySession and track keySystem to ensure we only apply ClearKey PSSH fixes to ClearKey streams
         (function() {
-            if (typeof window.MediaKeySession === 'undefined' || !window.MediaKeySession.prototype.generateRequest) {
+            if (typeof navigator.requestMediaKeySystemAccess === 'undefined') {
                 return;
             }
-            const originalGenerateRequest = window.MediaKeySession.prototype.generateRequest;
-            window.MediaKeySession.prototype.generateRequest = function(initDataType, initData) {
-                try {
-                    if (window.currentClearKeys && window.currentClearKeys.length > 0) {
-                        const initDataBytes = new Uint8Array(initData);
-                        const clearkeySystemId = [
-                            0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
-                            0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
-                        ];
-                        
-                        let hasClearKeyPssh = false;
-                        for (let i = 0; i <= initDataBytes.length - 16; i++) {
-                            let match = true;
-                            for (let j = 0; j < 16; j++) {
-                                if (initDataBytes[i + j] !== clearkeySystemId[j]) {
-                                    match = false;
+            const originalRequestAccess = navigator.requestMediaKeySystemAccess;
+            navigator.requestMediaKeySystemAccess = function(keySystem, supportedConfigurations) {
+                return originalRequestAccess.call(this, keySystem, supportedConfigurations)
+                    .then(access => {
+                        const originalCreateMediaKeys = access.createMediaKeys;
+                        access.createMediaKeys = function() {
+                            return originalCreateMediaKeys.call(this)
+                                .then(mediaKeys => {
+                                    mediaKeys._keySystem = keySystem;
+                                    
+                                    const originalCreateSession = mediaKeys.createSession;
+                                    mediaKeys.createSession = function(sessionType) {
+                                        const session = originalCreateSession.call(this, sessionType);
+                                        session._keySystem = keySystem;
+                                        return session;
+                                    };
+                                    return mediaKeys;
+                                });
+                        };
+                        return access;
+                    });
+            };
+
+            if (typeof window.MediaKeySession !== 'undefined' && window.MediaKeySession.prototype.generateRequest) {
+                const originalGenerateRequest = window.MediaKeySession.prototype.generateRequest;
+                window.MediaKeySession.prototype.generateRequest = function(initDataType, initData) {
+                    try {
+                        // Only modify initData if the key system is org.w3.clearkey
+                        if (this._keySystem === 'org.w3.clearkey' && window.currentClearKeys && window.currentClearKeys.length > 0) {
+                            const initDataBytes = new Uint8Array(initData);
+                            const clearkeySystemId = [
+                                0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
+                                0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b
+                            ];
+                            
+                            let hasClearKeyPssh = false;
+                            for (let i = 0; i <= initDataBytes.length - 16; i++) {
+                                let match = true;
+                                for (let j = 0; j < 16; j++) {
+                                    if (initDataBytes[i + j] !== clearkeySystemId[j]) {
+                                        match = false;
+                                        break;
+                                    }
+                                }
+                                if (match) {
+                                    hasClearKeyPssh = true;
                                     break;
                                 }
                             }
-                            if (match) {
-                                hasClearKeyPssh = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!hasClearKeyPssh) {
-                            console.log('[WatchIt.maybe] ClearKey PSSH not found in initData. Generating and appending ClearKey PSSH...');
-                            const kidsBytes = window.currentClearKeys.map(k => {
-                                try {
-                                    return base64UrlToBytes(k.kid);
-                                } catch (e) {
-                                    console.error('[WatchIt.maybe] Failed to parse ClearKey KID', k.kid, e);
-                                    return null;
-                                }
-                            }).filter(Boolean);
                             
-                            if (kidsBytes.length > 0) {
-                                const psshBox = createClearKeyPSSH(kidsBytes);
-                                const newInitData = new Uint8Array(initDataBytes.length + psshBox.length);
-                                newInitData.set(initDataBytes, 0);
-                                newInitData.set(psshBox, initDataBytes.length);
-                                initData = newInitData.buffer;
+                            if (!hasClearKeyPssh) {
+                                console.log('[WatchIt.maybe] ClearKey PSSH not found in initData. Generating and appending ClearKey PSSH...');
+                                const kidsBytes = window.currentClearKeys.map(k => {
+                                    try {
+                                        return base64UrlToBytes(k.kid);
+                                    } catch (e) {
+                                        console.error('[WatchIt.maybe] Failed to parse ClearKey KID', k.kid, e);
+                                        return null;
+                                    }
+                                }).filter(Boolean);
+                                
+                                if (kidsBytes.length > 0) {
+                                    const psshBox = createClearKeyPSSH(kidsBytes);
+                                    const newInitData = new Uint8Array(initDataBytes.length + psshBox.length);
+                                    newInitData.set(initDataBytes, 0);
+                                    newInitData.set(psshBox, initDataBytes.length);
+                                    initData = newInitData.buffer;
+                                }
                             }
                         }
+                    } catch (e) {
+                        console.error('[WatchIt.maybe] Error checking/modifying initData in generateRequest', e);
                     }
-                } catch (e) {
-                    console.error('[WatchIt.maybe] Error checking/modifying initData in generateRequest', e);
-                }
-                return originalGenerateRequest.call(this, initDataType, initData);
-            };
+                    return originalGenerateRequest.call(this, initDataType, initData);
+                };
+            }
         })();
 
         // Global storage for the currently selected channel's clearkeys
