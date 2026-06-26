@@ -3,6 +3,6 @@
   "main": "index.js",
   "compatibility_date": "2024-09-23",
   "vars": {
-    "ALLOWED_ORIGINS": "https://watchit-maybe.pages.dev"
+    "ALLOWED_ORIGINS": "https://kaajiitsme.github.io,https://watchit-maybe.pages.dev"
   }
 }
