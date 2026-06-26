@@ -1016,7 +1016,7 @@
                     <p class="setting-desc">Masukkan URL playlist M3U (misalnya link Github Raw) atau unggah file lokal.</p>
                     
                     <div class="url-input-group" style="margin-top: 5px;">
-                        <input type="text" id="setting-playlist-url" value="playlist.m3u" placeholder="https://url-playlist.m3u" style="flex: 1; padding: 8px 12px; background-color: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; color: var(--color-text); font-size: 13px;" />
+                        <input type="text" id="setting-playlist-url" value="https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u" placeholder="https://url-playlist.m3u" style="flex: 1; padding: 8px 12px; background-color: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; color: var(--color-text); font-size: 13px;" />
                         <button id="btn-load-playlist-url" class="icon-btn" title="Muat URL" style="width: 38px; height: 38px; flex-shrink: 0;">
                             <i data-lucide="download"></i>
                         </button>
@@ -1073,13 +1073,19 @@
         // Proxy settings (saved in localStorage)
         let settings = {
             useProxy: false,
-            proxyUrl: 'https://corsproxy.io/?url='
+            proxyUrl: 'https://corsproxy.io/?url=',
+            playlistUrl: 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u'
         };
 
         // Load settings from localStorage if available
         if (localStorage.getItem('iptv_settings')) {
             try {
                 settings = { ...settings, ...JSON.parse(localStorage.getItem('iptv_settings')) };
+                // Auto-migrate old playlist.m3u config to new remote default
+                if (settings.playlistUrl === 'playlist.m3u') {
+                    settings.playlistUrl = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
+                    localStorage.setItem('iptv_settings', JSON.stringify(settings));
+                }
             } catch (e) {
                 console.error('Failed to parse settings from localStorage', e);
             }
@@ -1814,7 +1820,7 @@
         };
 
         // Kick off M3U download and render list from settings or default
-        const initialPlaylist = settings.playlistUrl || 'playlist.m3u';
+        const initialPlaylist = settings.playlistUrl || 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
         if (initialPlaylist.startsWith('Lokal:')) {
             // Default to local server copy on reload for files loaded locally
             loadM3U('playlist.m3u');
