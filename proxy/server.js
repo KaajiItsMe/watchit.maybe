@@ -178,7 +178,9 @@ const server = http.createServer(async (req, res) => {
 
   // Rewrite manifest HLS / DASH
   if (isHls || isDash) {
-    const selfProxyBase = `${requestUrl.protocol}//${requestUrl.host}`;
+    // Detect real protocol from Render/reverse-proxy X-Forwarded-Proto header
+    const proto = req.headers['x-forwarded-proto'] || (req.socket && req.socket.encrypted ? 'https' : 'http');
+    const selfProxyBase = `${proto}://${req.headers.host}`;
     const manifestText = await upstreamRes.text();
     const rewritten = isHls
       ? rewriteHlsManifest(manifestText, targetUrlString, selfProxyBase, headersParam)
