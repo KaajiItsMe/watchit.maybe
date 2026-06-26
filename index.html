@@ -559,6 +559,7 @@
             color: var(--color-muted);
             margin-bottom: 24px;
             line-height: 1.5;
+            white-space: pre-line;
         }
 
         .error-actions {
@@ -1133,7 +1134,7 @@
                 <div class="setting-group">
                     <label for="setting-proxy-url" class="setting-label">URL Proxy CORS / Stream Proxy</label>
                     <input type="text" id="setting-proxy-url" value="https://corsproxy.io/?url=" />
-                    <p class="setting-desc">Endpoint proxy (misal: <code>https://corsproxy.io/?url=</code> atau URL Cloudflare Worker dhanytv). Digunakan untuk meloloskan CORS dan menyuntikkan header Referer/User-Agent.</p>
+                    <p class="setting-desc">Endpoint proxy (default: <code>https://corsproxy.io/?url=</code>). Catatan: corsproxy.io hanya mendukung CORS biasa, TIDAK bisa menyuntikkan header Referer/User-Agent. Untuk saluran premium yang membutuhkan header khusus (seperti TransTV, Vision+), Anda wajib mendeploy Cloudflare Worker sendiri (script di <code>dhanytv/web/proxy/worker.js</code>) lalu tempel URL-nya di sini.</p>
                 </div>
 
                 <div class="setting-group">
@@ -1787,7 +1788,15 @@
 
             let message = error ? error.message : 'Koneksi jaringan terputus atau format media tidak didukung.';
 
-            if (error && error.code === 4) {
+            if (originalSelectedChannel) {
+                const hasHeaders = originalSelectedChannel.referrer || originalSelectedChannel.userAgent;
+                const isDefaultProxy = settings.proxyUrl.includes('corsproxy.io');
+                if (hasHeaders && isDefaultProxy) {
+                    message = 'Gagal memuat video.\n\nSaluran premium/DRM ini memerlukan header khusus (User-Agent/Referer) agar dapat diputar. CORS proxy default (corsproxy.io) tidak mendukung injeksi header ini, sehingga server mengembalikan status 403 (Forbidden).\n\nSolusi: Silakan deploy Cloudflare Worker Anda sendiri (script ada di folder "dhanytv/web/proxy/worker.js") lalu masukkan URL-nya di Pengaturan (⚙) untuk memutarnya.';
+                } else if (error && error.code === 4) {
+                    message = 'Gagal memuat video. Ini mungkin karena restriksi CORS, halaman diblokir Mixed Content (HTTP di situs HTTPS), atau enkripsi DRM tidak terdekripsi.';
+                }
+            } else if (error && error.code === 4) {
                 message = 'Gagal memuat video. Ini mungkin karena restriksi CORS, halaman diblokir Mixed Content (HTTP di situs HTTPS), atau enkripsi DRM tidak terdekripsi.';
             }
 
