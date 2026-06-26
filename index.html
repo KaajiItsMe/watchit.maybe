@@ -142,19 +142,69 @@
             box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb), 0.15);
         }
 
-        /* Categories Scroll Tabs */
+        /* Categories Scroll Tabs with Slider Wrapper */
+        .category-tabs-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 12px 15px 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         .category-tabs {
-            padding: 0 20px 15px 20px;
             display: flex;
             gap: 8px;
             overflow-x: auto;
             scrollbar-width: none;
             /* Firefox */
+            scroll-behavior: smooth;
+            flex: 1;
+            padding: 4px 0;
+            width: 100%;
         }
 
         .category-tabs::-webkit-scrollbar {
             display: none;
             /* Safari & Chrome */
+        }
+
+        .tabs-scroll-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            color: var(--color-text);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: none; /* Managed dynamically via JS */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            transition: var(--transition-smooth);
+            flex-shrink: 0;
+            padding: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tabs-scroll-btn:hover {
+            background: var(--bg-glass-active);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+            transform: scale(1.1);
+        }
+
+        .tabs-scroll-btn i {
+            width: 14px;
+            height: 14px;
+        }
+        
+        #btn-tabs-left {
+            margin-right: 6px;
+        }
+        
+        #btn-tabs-right {
+            margin-left: 6px;
         }
 
         .category-pill {
@@ -942,9 +992,17 @@
                 <input type="text" id="search-input" placeholder="Cari nama saluran..." autocomplete="off">
             </div>
 
-            <!-- Categories pills -->
-            <div id="category-tabs" class="category-tabs">
-                <!-- Javascript will load categories here -->
+            <!-- Categories pills with Slider Navigation -->
+            <div class="category-tabs-wrapper">
+                <button id="btn-tabs-left" class="tabs-scroll-btn" title="Scroll Left">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <div id="category-tabs" class="category-tabs">
+                    <!-- Javascript will load categories here -->
+                </div>
+                <button id="btn-tabs-right" class="tabs-scroll-btn" title="Scroll Right">
+                    <i data-lucide="chevron-right"></i>
+                </button>
             </div>
 
             <!-- Main list of channels -->
@@ -1073,9 +1131,9 @@
                 </div>
 
                 <div class="setting-group">
-                    <label for="setting-proxy-url" class="setting-label">URL Proxy CORS</label>
+                    <label for="setting-proxy-url" class="setting-label">URL Proxy CORS / Stream Proxy</label>
                     <input type="text" id="setting-proxy-url" value="https://corsproxy.io/?url=" />
-                    <p class="setting-desc">Endpoint server proxy CORS. Input URL asli akan disisipkan di akhir.</p>
+                    <p class="setting-desc">Endpoint proxy (misal: <code>https://corsproxy.io/?url=</code> atau URL Cloudflare Worker dhanytv). Digunakan untuk meloloskan CORS dan menyuntikkan header Referer/User-Agent.</p>
                 </div>
 
                 <div class="setting-group">
@@ -1125,6 +1183,58 @@
         // Initialize Player with EME (DRM decryption support)
         const player = videojs('my-video');
         player.eme();
+
+        // Helper to format url through CORS/stream proxy and add encoded headers (dhanytv reference)
+        function proxify(url, referrer, userAgent) {
+            const baseInput = settings.proxyUrl.trim();
+            if (!baseInput) return url;
+            
+            let base = baseInput;
+            if (base.includes('?url=')) {
+                base = base.split('?url=')[0];
+            }
+            base = base.replace(/\/+$/, '');
+            
+            let q = `${base}/?url=${encodeURIComponent(url)}`;
+            
+            const headers = {};
+            if (referrer) headers['Referer'] = referrer;
+            if (userAgent) headers['User-Agent'] = userAgent;
+            
+            if (Object.keys(headers).length > 0) {
+                let enc;
+                try {
+                    enc = btoa(unescape(encodeURIComponent(JSON.stringify(headers))));
+                } catch (e) {
+                    enc = btoa(JSON.stringify(headers));
+                }
+                q += `&h=${encodeURIComponent(enc)}`;
+            }
+            return q;
+        }
+
+        // Hook Video.js requests to route HLS/DASH segments through the proxy when active
+        if (videojs.Vhs && videojs.Vhs.xhr) {
+            videojs.Vhs.xhr.beforeRequest = function (options) {
+                if (originalSelectedChannel) {
+                    const hasHeaders = originalSelectedChannel.referrer || originalSelectedChannel.userAgent;
+                    const useProxy = settings.useProxy || hasHeaders;
+                    if (useProxy) {
+                        let base = settings.proxyUrl;
+                        if (base.includes('?url=')) {
+                            base = base.split('?url=')[0];
+                        }
+                        base = base.replace(/\/+$/, '');
+                        
+                        // Rewrite segment/key requests to go through proxy if they aren't already
+                        if (options.uri && !options.uri.startsWith(base) && !options.uri.startsWith('blob:')) {
+                            options.uri = proxify(options.uri, originalSelectedChannel.referrer, originalSelectedChannel.userAgent);
+                        }
+                    }
+                }
+                return options;
+            };
+        }
 
         // Initialize Lucide Icons
         lucide.createIcons();
@@ -1447,6 +1557,9 @@
                 const button = document.createElement('button');
                 button.className = `category-pill ${cat === activeCategory ? 'active' : ''}`;
                 button.innerText = cat;
+                button.onfocus = () => {
+                    button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                };
                 button.onclick = () => {
                     activeCategory = cat;
                     document.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'));
@@ -1455,6 +1568,9 @@
                 };
                 tabsContainer.appendChild(button);
             });
+
+            // Recalculate slider buttons visibility
+            setTimeout(updateTabScrollButtons, 100);
         }
 
         // Filter and display channels
@@ -1560,7 +1676,8 @@
             document.getElementById('playing-subtitle').innerText = `${channel.group} • ${channel.url.split('/')[2] || 'Stream URL'}`;
 
             // Decide whether to apply CORS proxy
-            const useProxy = (forceProxy !== null) ? forceProxy : settings.useProxy;
+            const hasHeaders = channel.referrer || channel.userAgent;
+            const useProxy = (forceProxy !== null) ? forceProxy : (settings.useProxy || hasHeaders);
 
             // Check if HTTP to HTTPS upgrade is necessary to prevent Mixed Content
             let streamUrl = channel.url;
@@ -1582,9 +1699,9 @@
             let finalUrl = streamUrl;
             let proxyApplied = false;
 
-            // Route through proxy if settings dictate or it is an un-upgradable HTTP IP stream on an HTTPS site
+            // Route through proxy if settings/headers dictate or it is an un-upgradable HTTP IP stream on an HTTPS site
             if (useProxy || (isPageHttps && ipAddressBlock)) {
-                finalUrl = settings.proxyUrl + encodeURIComponent(streamUrl);
+                finalUrl = proxify(streamUrl, channel.referrer, channel.userAgent);
                 proxyApplied = true;
             }
 
@@ -1620,7 +1737,7 @@
                     drmInfo = 'Widevine';
                     let licenseUrl = channel.drm.url;
                     if (proxyApplied) {
-                        licenseUrl = settings.proxyUrl + encodeURIComponent(licenseUrl);
+                        licenseUrl = proxify(licenseUrl, channel.referrer, channel.userAgent);
                     }
                     srcOptions.keySystems['com.widevine.alpha'] = {
                         url: licenseUrl
