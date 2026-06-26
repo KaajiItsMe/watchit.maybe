@@ -1045,8 +1045,7 @@
             <div class="settings-body">
                 <div class="setting-group">
                     <label class="setting-label">Sumber Playlist M3U</label>
-                    <p class="setting-desc">Masukkan URL playlist M3U (misalnya link Github Raw) atau unggah file lokal.
-                    </p>
+                    <p class="setting-desc">Masukkan URL playlist M3U remote (misalnya link Github Raw).</p>
 
                     <div class="url-input-group" style="margin-top: 5px;">
                         <input type="text" id="setting-playlist-url"
@@ -1057,15 +1056,6 @@
                             style="width: 38px; height: 38px; flex-shrink: 0;">
                             <i data-lucide="download"></i>
                         </button>
-                    </div>
-
-                    <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-                        <label for="btn-upload-playlist" class="btn btn-secondary"
-                            style="font-size: 12px; padding: 8px 12px; cursor: pointer; flex: 1; margin: 0;">
-                            <i data-lucide="file-up" style="width: 14px; height: 14px; margin-right: 4px;"></i> Unggah
-                            File M3U
-                        </label>
-                        <input type="file" id="btn-upload-playlist" accept=".m3u,.m3u8" style="display: none;" />
                     </div>
                 </div>
 
@@ -1797,28 +1787,7 @@
             }
         };
 
-        // Load M3U from Uploaded File
-        document.getElementById('btn-upload-playlist').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
 
-            logDebug(`Reading local file: ${file.name}...`);
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const text = event.target.result;
-                logDebug('Local playlist file read successfully. Parsing...');
-
-                document.getElementById('setting-playlist-url').value = `Lokal: ${file.name}`;
-
-                parseM3U(text);
-                showToast('Daftar saluran lokal berhasil dimuat!', 'success');
-            };
-            reader.onerror = function () {
-                logDebug('Failed to read local file');
-                showToast('Gagal membaca file lokal', 'error');
-            };
-            reader.readAsText(file);
-        });
 
         // Copy URL button
         document.getElementById('btn-copy-url').onclick = () => {
@@ -1862,12 +1831,7 @@
 
         // Kick off M3U download and render list from settings or default
         const initialPlaylist = settings.playlistUrl || 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u';
-        if (initialPlaylist.startsWith('Lokal:')) {
-            // Default to remote copy on reload for files loaded locally
-            loadM3U('https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u');
-        } else {
-            loadM3U(initialPlaylist);
-        }
+        loadM3U(initialPlaylist.startsWith('Lokal:') ? 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u' : initialPlaylist);
     </script>
 </body>
 
