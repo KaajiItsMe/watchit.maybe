@@ -1982,9 +1982,65 @@
             return null;
         }
 
+        // Clean and convert common repository/directory URLs to raw file URLs
+        function cleanPlaylistUrl(url) {
+            if (typeof url !== 'string') return url;
+            url = url.trim();
+            if (!url) return url;
+
+            // GitHub URL conversion
+            if (url.includes('github.com/')) {
+                url = url.replace(/\/+$/, ''); // remove trailing slash
+
+                // 1. Specific handling for subirkumarpaul/Subirmaxpro
+                if (url.includes('subirkumarpaul/Subirmaxpro')) {
+                    if (url.endsWith('Subirmaxpro') || url.endsWith('Subirmaxpro/tree/main') || url.endsWith('Subirmaxpro/blob/main/Subirmaxpro')) {
+                        return 'https://raw.githubusercontent.com/subirkumarpaul/Subirmaxpro/main/Subirmaxpro';
+                    }
+                }
+
+                // 2. Standard blob URL to raw URL: github.com/.../blob/... -> raw.githubusercontent.com/...
+                if (url.includes('/blob/')) {
+                    return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                }
+
+                // 3. If it is already raw or user content URL, return it
+                if (url.includes('raw.githubusercontent.com')) {
+                    return url;
+                }
+
+                // 4. Standard repository root to guessed main/playlist.m3u
+                const repoMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)$/);
+                if (repoMatch) {
+                    return `https://raw.githubusercontent.com/${repoMatch[1]}/${repoMatch[2]}/main/playlist.m3u`;
+                }
+            }
+
+            // Archive.org URL conversion
+            if (url.includes('archive.org/')) {
+                url = url.replace(/\/+$/, ''); // remove trailing slash
+                
+                // If it is a directory listing page, resolve to the actual m3u file link
+                if (url.includes('/download/') && !url.toLowerCase().endsWith('.m3u') && !url.toLowerCase().endsWith('.m3u8')) {
+                    if (url.endsWith('bein-sports-m3u-playlist-1_202211')) {
+                        return url + '/bein-sports-m3u-playlist-1.m3u';
+                    }
+                }
+            }
+
+            return url;
+        }
+
         // Fetch & Parse M3U playlist file from a URL
         async function loadM3U(url = 'https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u', useProxy = false) {
             try {
+                // Auto-clean and convert URL format (e.g. standard GitHub link -> Raw link)
+                const resolvedUrl = cleanPlaylistUrl(url);
+                if (resolvedUrl !== url) {
+                    logDebug(`URL playlist dikonversi otomatis ke format RAW: ${resolvedUrl}`);
+                }
+                url = resolvedUrl;
+
                 logDebug(`Fetching playlist from: ${url}...`);
                 let fetchUrl = url;
                 if (useProxy) {
