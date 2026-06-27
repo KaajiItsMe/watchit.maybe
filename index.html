@@ -2129,7 +2129,18 @@
                     }
 
                     const logoMatch = extInfPart.match(/tvg-logo="([^"]+)"/);
-                    let logo = logoMatch ? logoMatch[1] : '';
+                    let logo = logoMatch ? logoMatch[1].trim() : '';
+
+                    // Clean and fix relative/malformed logo URLs
+                    if (logo) {
+                        if (logo.startsWith('//')) {
+                            logo = 'https:' + logo;
+                        } else if (logo.startsWith('://')) {
+                            logo = 'https' + logo;
+                        } else if (logo === 'h' || logo.length < 3 || (!logo.startsWith('http') && !logo.includes('.'))) {
+                            logo = ''; // Set as empty to trigger text initials fallback badge
+                        }
+                    }
 
                     const groupMatch = extInfPart.match(/group-title="([^"]+)"/);
                     let group = groupMatch ? groupMatch[1] : 'Other';
