@@ -1620,7 +1620,6 @@
                 }
                 // Auto-migrate old proxy URLs to the new Render deployment
                 if (settings.proxyUrl === 'https://corsproxy.io/?url=' ||
-                    settings.proxyUrl === 'https://watchit.backupeka7.workers.dev' ||
                     !settings.proxyUrl) {
                     settings.proxyUrl = 'https://watchit-cgzb.onrender.com';
                 }
@@ -2098,7 +2097,7 @@
                         group: tempExtInf ? tempExtInf.group : 'Other',
                         url: url,
                         drm: parseDrmProperties(tempKodiProps),
-                        referrer: tempExtVlcOpts['http-referrer'] || '',
+                        referrer: tempExtVlcOpts['http-referrer'] || tempExtVlcOpts['http-referer'] || '',
                         userAgent: tempExtVlcOpts['http-user-agent'] || ''
                     };
                     channels.push(channel);
