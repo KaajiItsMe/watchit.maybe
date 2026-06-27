@@ -2044,7 +2044,7 @@
                 logDebug(`Fetching playlist from: ${url}...`);
                 let fetchUrl = url;
                 if (useProxy) {
-                    fetchUrl = settings.proxyUrl + encodeURIComponent(url);
+                    fetchUrl = proxify(url);
                     logDebug(`Using CORS Proxy to fetch playlist: ${settings.proxyUrl}`);
                 }
 
