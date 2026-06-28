@@ -1013,15 +1013,58 @@
 
 
 
-        /* Resolution Selector Below Player */
+        /* Resolution Selector & Player Controls Below Player */
         .quality-selector-wrapper {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             padding: 12px 20px;
             background-color: var(--bg-panel);
             border-bottom: 1px solid var(--border-color);
             transition: all 0.3s ease;
+            flex-wrap: wrap;
+        }
+
+        .quality-selectors-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Make Video.js control bar responsive and wrap on small screens */
+        .video-js.vjs-layout-small .vjs-control-bar,
+        .video-js.vjs-layout-x-small .vjs-control-bar,
+        .video-js.vjs-layout-tiny .vjs-control-bar {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            height: auto !important;
+            background-color: rgba(7, 7, 9, 0.9) !important;
+            backdrop-filter: blur(10px);
+            padding: 6px 4px !important;
+            gap: 4px 0;
+        }
+
+        .video-js.vjs-layout-small .vjs-progress-control,
+        .video-js.vjs-layout-x-small .vjs-progress-control,
+        .video-js.vjs-layout-tiny .vjs-progress-control {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            order: -1 !important;
+            height: 16px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .video-js.vjs-layout-tiny .vjs-control {
+            width: 32px !important;
+        }
+
+        .video-js.vjs-layout-tiny .vjs-time-control {
+            padding-left: 2px !important;
+            padding-right: 2px !important;
+            font-size: 10px !important;
+            min-width: auto !important;
         }
 
         .quality-label {
@@ -1330,10 +1373,16 @@
                 </div>
             </div>
 
-            <!-- Quality Selector Panel -->
-            <div id="quality-selector-wrapper" class="quality-selector-wrapper hidden">
-                <span class="quality-label"><i data-lucide="sliders-horizontal"></i> Kualitas Video:</span>
-                <div id="quality-selector-container" class="quality-selector-container"></div>
+            <!-- Quality Selector & Player Actions Panel -->
+            <div id="quality-selector-wrapper" class="quality-selector-wrapper">
+                <div id="quality-selectors-group" class="quality-selectors-group hidden">
+                    <span class="quality-label"><i data-lucide="sliders-horizontal"></i> Kualitas Video:</span>
+                    <div id="quality-selector-container" class="quality-selector-container"></div>
+                </div>
+                <button id="btn-fullscreen-below" class="nav-btn" title="Layar Penuh">
+                    <i data-lucide="maximize"></i>
+                    <span>Layar Penuh</span>
+                </button>
             </div>
 
             <!-- Footer Details & Metadata Panel -->
@@ -1648,18 +1697,18 @@
 
         // Update quality level selector UI below player
         function updateQualityUI() {
-            const wrapper = document.getElementById('quality-selector-wrapper');
+            const group = document.getElementById('quality-selectors-group');
             const container = document.getElementById('quality-selector-container');
             const levels = player.qualityLevels();
 
             // Only show resolution list if there are multiple options available
             if (levels.length <= 1) {
-                wrapper.classList.add('hidden');
+                group.classList.add('hidden');
                 container.innerHTML = '';
                 return;
             }
 
-            wrapper.classList.remove('hidden');
+            group.classList.remove('hidden');
             container.innerHTML = '';
 
             // 1. Create "Auto" button
@@ -2301,10 +2350,10 @@
             document.getElementById('player-error-overlay').classList.add('hidden');
 
             // Reset quality selector UI
-            const qualityWrapper = document.getElementById('quality-selector-wrapper');
+            const qualityGroup = document.getElementById('quality-selectors-group');
             const qualityContainer = document.getElementById('quality-selector-container');
-            if (qualityWrapper && qualityContainer) {
-                qualityWrapper.classList.add('hidden');
+            if (qualityGroup && qualityContainer) {
+                qualityGroup.classList.add('hidden');
                 qualityContainer.innerHTML = '';
             }
 
@@ -2704,6 +2753,31 @@
                 showToast('URL disalin ke clipboard!', 'success');
             }
         };
+
+        // Fullscreen button click handler below player
+        const btnFullscreenBelow = document.getElementById('btn-fullscreen-below');
+        if (btnFullscreenBelow) {
+            btnFullscreenBelow.onclick = () => {
+                if (!player.isFullscreen()) {
+                    player.requestFullscreen();
+                } else {
+                    player.exitFullscreen();
+                }
+            };
+        }
+
+        // Fullscreen change listener to sync the button icon & text
+        player.on('fullscreenchange', function () {
+            const fsBtn = document.getElementById('btn-fullscreen-below');
+            if (fsBtn) {
+                if (player.isFullscreen()) {
+                    fsBtn.innerHTML = '<i data-lucide="minimize"></i> <span>Keluar Layar Penuh</span>';
+                } else {
+                    fsBtn.innerHTML = '<i data-lucide="maximize"></i> <span>Layar Penuh</span>';
+                }
+                lucide.createIcons();
+            }
+        });
 
         // Error Recovery Action: Try with CORS proxy
         document.getElementById('btn-retry-proxy').onclick = () => {
